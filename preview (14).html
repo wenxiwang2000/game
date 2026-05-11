@@ -1,0 +1,1208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SummerDeer Deer Immuno</title>
+<meta name="description" content="Single-file SummerDeer browser game: play as the Deer only, collect gift abilities, activate immunity, survive enemy missiles, convert same-kind deer enemies into one-life allies, and clear 30 harder levels." />
+<style>
+  :root{
+    --bg:#0b1117;
+    --bg2:#121b23;
+    --panel:rgba(15,23,31,.88);
+    --panel2:rgba(24,35,43,.92);
+    --line:rgba(242,244,235,.12);
+    --line2:rgba(242,244,235,.24);
+    --text:#f5f4eb;
+    --muted:rgba(245,244,235,.66);
+    --soft:rgba(255,255,255,.065);
+    --green:#87d9c1;
+    --gold:#f1b85b;
+    --coral:#ff7a59;
+    --danger:#ff6b6b;
+    --blue:#79b7ff;
+    --violet:#b89cff;
+    --ink:#071016;
+    --radius:24px;
+    --side:310px;
+    --shadow:0 24px 70px rgba(0,0,0,.42);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text)}
+  body{
+    background:
+      radial-gradient(circle at 78% 12%, rgba(241,184,91,.12), transparent 32%),
+      radial-gradient(circle at 18% 16%, rgba(135,217,193,.10), transparent 29%),
+      radial-gradient(circle at 60% 86%, rgba(184,156,255,.08), transparent 38%),
+      linear-gradient(135deg,#28323b 0%,#15212b 50%,#090f15 100%);
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+    background-image:
+      linear-gradient(rgba(255,255,255,.034) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+    background-size:42px 42px;
+    mask-image:linear-gradient(to bottom,rgba(0,0,0,.76),transparent 88%);
+  }
+  button{font:inherit;color:inherit}
+  code{color:var(--green)}
+  #app{height:100vh;display:grid;grid-template-columns:var(--side) 1fr;grid-template-rows:64px 1fr 44px;overflow:hidden}
+  header{
+    grid-column:1/-1;display:flex;align-items:center;gap:14px;
+    padding:0 18px;border-bottom:1px solid var(--line);
+    background:rgba(7,13,18,.80);backdrop-filter:blur(18px);z-index:30;
+  }
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .mark{width:38px;height:38px;border-radius:15px;background:linear-gradient(135deg,rgba(135,217,193,.16),rgba(241,184,91,.12));display:grid;place-items:center;border:1px solid var(--line);box-shadow:0 10px 28px rgba(0,0,0,.28)}
+  h1{font-size:16px;line-height:1;margin:0;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+  h1 span{color:var(--gold)}
+  .sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw;margin-top:4px}
+  .top-pills{margin-left:auto;display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+  .pill{border:1px solid var(--line);background:rgba(0,0,0,.24);border-radius:999px;padding:7px 10px;font-size:12px;color:var(--muted)}
+  .pill b{color:var(--text);font-weight:850}
+
+  aside{
+    grid-row:2/4;padding:16px 14px 14px;border-right:1px solid var(--line);
+    background:rgba(7,13,18,.70);backdrop-filter:blur(18px);overflow:auto;z-index:20;
+  }
+  .side-card{border:1px solid var(--line);background:var(--panel);border-radius:22px;padding:14px;box-shadow:var(--shadow);margin-bottom:12px}
+  .side-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .side-title h2{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.12em}
+  .small{font-size:12px;color:var(--muted);line-height:1.55}
+  .btn{border:1px solid var(--line);background:var(--soft);color:var(--text);border-radius:999px;min-height:38px;padding:9px 12px;cursor:pointer;transition:transform .16s ease,opacity .16s ease,border-color .16s ease,background .16s ease;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:760;font-size:13px;user-select:none}
+  .btn:hover{transform:translateY(-1px);opacity:.92;border-color:var(--line2);background:rgba(255,255,255,.085)}
+  .btn:disabled{opacity:.42;cursor:not-allowed;transform:none}
+  .btn.primary{background:linear-gradient(135deg,#c85d46,#9d4965);border-color:rgba(255,255,255,.18);color:white}
+  .btn.green{background:rgba(135,217,193,.12);border-color:rgba(135,217,193,.28);color:var(--green)}
+  .btn.gold{background:rgba(241,184,91,.12);border-color:rgba(241,184,91,.28);color:var(--gold)}
+  .btn.danger{background:rgba(255,122,89,.10);border-color:rgba(255,122,89,.25);color:#ffb39f}
+  .btn-grid{display:grid;grid-template-columns:1fr;gap:8px}
+
+  .sample-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  .sample-btn{position:relative;border:1px solid var(--line);background:rgba(255,255,255,.06);border-radius:16px;min-height:54px;font-size:27px;cursor:pointer;transition:transform .15s ease,background .15s ease,border-color .15s ease,box-shadow .15s ease;overflow:hidden}
+  .sample-btn:hover{transform:translateY(-2px) scale(1.035);background:rgba(255,255,255,.105);border-color:var(--line2)}
+  .sample-btn.selected{border-color:rgba(241,184,91,.75);box-shadow:0 0 0 3px rgba(241,184,91,.10),0 12px 28px rgba(0,0,0,.25)}
+  .sample-btn::after{content:attr(data-short);position:absolute;right:6px;bottom:5px;font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.04em}
+
+  .explain{padding:12px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.045);min-height:126px;margin-top:10px}
+  .explain .big{font-size:30px;margin-right:8px}
+  .explain strong{font-size:14px;color:var(--text)}
+  .explain p{font-size:12px;color:var(--muted);line-height:1.55;margin:8px 0 0}
+
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .metric{padding:10px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.045);min-height:62px}
+  .metric span{display:block;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em}
+  .metric b{display:block;font-size:21px;margin-top:6px;letter-spacing:-.03em}
+  .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .mode-row .btn.active{border-color:rgba(241,184,91,.62);background:rgba(241,184,91,.13);color:var(--gold)}
+  .ability-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .chip{border:1px solid var(--line);background:rgba(255,255,255,.055);border-radius:999px;padding:7px 10px;font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:.15s ease;user-select:none}
+  .chip:hover{border-color:var(--line2);transform:translateY(-1px)}
+  .chip.own{background:rgba(135,217,193,.10);border-color:rgba(135,217,193,.25);color:var(--green)}
+  .chip.ready{background:rgba(241,184,91,.12);border-color:rgba(241,184,91,.28);color:var(--gold)}
+  .chip.empty{opacity:.46;cursor:not-allowed}
+  .key{display:flex;align-items:flex-start;gap:9px;margin-top:8px;color:var(--muted);font-size:12px;line-height:1.45}
+  .key i{width:8px;height:8px;border-radius:50%;margin-top:5px;background:var(--gold);flex:0 0 auto}
+
+  main{position:relative;overflow:hidden;padding:18px}
+  #world{
+    position:relative;width:100%;height:100%;min-height:520px;overflow:hidden;border-radius:var(--radius);
+    border:1px solid var(--line);background:
+      radial-gradient(circle at 55% 48%,rgba(241,184,91,.055),transparent 35%),
+      linear-gradient(145deg,rgba(31,44,53,.94),rgba(13,22,30,.98));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),var(--shadow);
+    cursor:none;touch-action:none;
+  }
+  #world::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.026) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.023) 1px,transparent 1px);background-size:34px 34px;z-index:0}
+  #worldHint{position:absolute;left:16px;top:14px;z-index:10;padding:8px 12px;border-radius:999px;background:rgba(4,10,14,.55);border:1px solid var(--line);color:rgba(245,245,238,.72);font-size:12px;font-weight:760;pointer-events:none;max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #entityLayer,#effectLayer{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none}
+  #effectLayer{z-index:3}
+  .entity{position:absolute;width:46px;height:46px;display:grid;place-items:center;font-size:29px;border-radius:50%;transform:translate(-50%,-50%);transition:box-shadow .2s ease,border-color .2s ease,filter .2s ease;background:rgba(4,10,14,.50);border:1px solid rgba(255,255,255,.15);box-shadow:0 14px 38px rgba(0,0,0,.33)}
+  .player{width:58px;height:58px;font-size:34px;border-color:rgba(241,184,91,.8);box-shadow:0 0 0 4px rgba(241,184,91,.12),0 0 38px rgba(241,184,91,.20),0 20px 42px rgba(0,0,0,.42);z-index:6;transform:translate(-50%,-50%) scale(var(--scale,1));transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+  .player.big{border-color:rgba(255,224,131,.95);box-shadow:0 0 0 5px rgba(241,184,91,.16),0 0 64px rgba(241,184,91,.28),0 22px 46px rgba(0,0,0,.46)}
+  .enemy{z-index:4}
+  .enemy.same{border-color:rgba(135,217,193,.55);box-shadow:0 0 0 3px rgba(135,217,193,.10),0 14px 38px rgba(0,0,0,.33)}
+  .enemy.frozen{filter:saturate(.45) brightness(.75);border-color:rgba(121,183,255,.7)}
+  .ally{z-index:5;border-color:rgba(135,217,193,.80);background:rgba(8,30,26,.58);box-shadow:0 0 0 4px rgba(135,217,193,.12),0 0 34px rgba(135,217,193,.15),0 14px 38px rgba(0,0,0,.33)}
+  .vample{z-index:7;width:30px;height:30px;font-size:19px;border-color:rgba(241,184,91,.82);background:rgba(18,13,6,.62);box-shadow:0 0 0 2px rgba(241,184,91,.12),0 0 26px rgba(241,184,91,.20),0 10px 24px rgba(0,0,0,.32);filter:drop-shadow(0 0 9px rgba(241,184,91,.18))}
+  .vample::after{content:"";position:absolute;left:-16px;top:50%;width:18px;height:2px;background:linear-gradient(90deg,transparent,rgba(241,184,91,.55));transform:translateY(-50%);border-radius:999px}
+  .enemy-missile{z-index:7;width:24px;height:24px;font-size:14px;border-color:rgba(255,122,89,.82);background:rgba(32,8,8,.70);box-shadow:0 0 0 2px rgba(255,122,89,.15),0 0 24px rgba(255,122,89,.22),0 10px 24px rgba(0,0,0,.34)}
+  .gift{z-index:5;width:48px;height:48px;font-size:30px;border-color:rgba(255,224,131,.82);background:rgba(33,22,8,.65);box-shadow:0 0 0 4px rgba(241,184,91,.11),0 0 38px rgba(241,184,91,.22),0 14px 38px rgba(0,0,0,.36);animation:giftPulse 1.15s ease-in-out infinite}
+  @keyframes giftPulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.08)}}
+  .blessed{border-color:rgba(255,224,131,.95)!important;box-shadow:0 0 0 6px rgba(241,184,91,.18),0 0 72px rgba(241,184,91,.34),0 22px 48px rgba(0,0,0,.48)!important}
+  .clash{border-color:rgba(255,122,89,.76)!important;box-shadow:0 0 0 4px rgba(255,122,89,.14),0 0 34px rgba(255,122,89,.20),0 14px 38px rgba(0,0,0,.36)!important}
+  .checkbar{position:absolute;left:50%;bottom:-10px;width:50px;height:5px;transform:translateX(-50%);border-radius:999px;background:rgba(255,255,255,.10);overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+  .checkbar i{display:block;height:100%;width:0;background:var(--green);border-radius:inherit}
+  .tag{position:absolute;left:50%;top:-16px;transform:translateX(-50%);font-size:10px;padding:3px 6px;border-radius:999px;background:rgba(4,10,14,.70);border:1px solid rgba(255,255,255,.12);color:var(--muted);white-space:nowrap;font-weight:850}
+  .tag.life{top:-22px;color:var(--gold);border-color:rgba(241,184,91,.42);background:rgba(7,16,22,.86)}
+  .tag.one{top:auto;bottom:-17px;color:var(--green);border-color:rgba(135,217,193,.32)}
+  .ring{position:absolute;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;border:1px solid rgba(241,184,91,.45);background:radial-gradient(circle,rgba(241,184,91,.12),transparent 64%);animation:ring .42s ease-out forwards}
+  .ring.blue{border-color:rgba(121,183,255,.6);background:radial-gradient(circle,rgba(121,183,255,.15),transparent 64%)}
+  .ring.green{border-color:rgba(135,217,193,.6);background:radial-gradient(circle,rgba(135,217,193,.15),transparent 64%)}
+  .ring.red{border-color:rgba(255,122,89,.6);background:radial-gradient(circle,rgba(255,122,89,.16),transparent 64%)}
+  @keyframes ring{from{opacity:.9;width:20px;height:20px}to{opacity:0;width:190px;height:190px}}
+  .zone{position:absolute;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;border:1px dashed rgba(135,217,193,.45);background:rgba(135,217,193,.06);animation:zonePulse 1.8s ease-in-out infinite}
+  .zone.fire{border-color:rgba(255,122,89,.45);background:rgba(255,122,89,.07)}
+  .zone.home{border-color:rgba(241,184,91,.46);background:rgba(241,184,91,.07)}
+  @keyframes zonePulse{0%,100%{opacity:.52;transform:translate(-50%,-50%) scale(.98)}50%{opacity:.86;transform:translate(-50%,-50%) scale(1.02)}}
+  .poptext{position:absolute;z-index:9;pointer-events:none;color:#f8e7b0;background:#071016;border:1px solid rgba(241,184,91,.36);padding:5px 8px;border-radius:999px;font-size:11px;font-weight:850;transform:translate(-50%,-120%);animation:labelUp 1.15s ease forwards;white-space:nowrap}
+  @keyframes labelUp{to{opacity:0;transform:translate(-50%,-190%)}}
+  .overlay{position:absolute;inset:0;display:none;z-index:40;align-items:center;justify-content:center;background:rgba(2,6,10,.70);backdrop-filter:blur(8px);padding:24px}
+  .overlay.show{display:flex}
+  .modal{width:min(520px,100%);border:1px solid var(--line2);background:rgba(12,19,26,.94);border-radius:28px;padding:30px;box-shadow:var(--shadow);text-align:center}
+  .modal .emoji{font-size:60px;display:block;margin-bottom:10px}
+  .modal h2{font-size:32px;margin:0 0 10px;letter-spacing:-.04em}
+  .modal p{color:var(--muted);line-height:1.65;margin:0 0 18px}
+  footer{grid-column:2/-1;display:flex;align-items:center;gap:14px;padding:0 18px;border-top:1px solid var(--line);background:rgba(7,13,18,.72);color:var(--muted);font-size:12px;z-index:30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #toast{position:fixed;left:50%;bottom:58px;transform:translateX(-50%) translateY(70px);z-index:99;background:#071016;border:1px solid var(--line2);color:var(--text);box-shadow:var(--shadow);padding:11px 16px;border-radius:999px;font-size:13px;font-weight:780;opacity:0;transition:all .26s ease;pointer-events:none;max-width:min(720px,calc(100vw - 24px));text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .mobile-toggle{display:none}
+  @media(max-width:940px){
+    :root{--side:0px}
+    #app{grid-template-columns:1fr;grid-template-rows:64px 1fr 44px}
+    aside{position:fixed;left:12px;top:76px;width:min(340px,calc(100vw - 24px));max-height:calc(100vh - 134px);transform:translateX(-108%);transition:transform .22s ease;border:1px solid var(--line);border-radius:22px;z-index:70}
+    aside.open{transform:translateX(0)}
+    .mobile-toggle{display:inline-flex!important}
+    .sub{display:none}
+    footer{grid-column:1/-1}
+    main{padding:12px}
+    #world{cursor:crosshair}
+  }
+  @media(max-width:620px){
+    .top-pills .pill:nth-child(n+3){display:none}
+    h1{font-size:13px}
+    .sample-grid{grid-template-columns:repeat(4,1fr)}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <button class="btn mobile-toggle" id="mobilePanel" type="button">☰</button>
+    <div class="brand">
+      <div class="mark">🦌</div>
+      <div>
+        <h1>SummerDeer <span>Deer Immuno</span></h1>
+        <div class="sub">Deer only · gift powers · immune clashes · survive 30 levels</div>
+      </div>
+    </div>
+    <div class="top-pills">
+      <div class="pill">Level <b id="levelText">1</b>/30</div>
+      <div class="pill">Wave in <b id="timerText">--</b></div>
+      <div class="pill">Enemies <b id="enemyText">0</b></div>
+      <div class="pill">Immuno <b id="immuneText">ready</b></div>
+      <div class="pill">Best <b id="bestText">0</b></div>
+    </div>
+  </header>
+
+  <aside id="sidebar">
+    <div class="side-card">
+      <div class="side-title"><h2>Your sample</h2><span>🦌</span></div>
+      <div class="explain" id="abilityExplain">
+        <div><span class="big">🦌</span><strong>Deer · Immuno Body</strong></div>
+        <p>You are always the Deer. Click/tap or press <b>Space</b> to activate Immuno. While Immuno is active, bumping enemies or enemy missiles gives you +1 life. Without Immuno, bumps cost -1 life.</p>
+      </div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-title"><h2>Start and rule</h2><span>⏱️</span></div>
+      <div class="btn-grid">
+        <button class="btn primary" id="startBtn" type="button">Start game</button>
+        <button class="btn danger" id="resetBtn" type="button">Reset run</button>
+      </div>
+      <div class="key"><i></i><div><b>Sample:</b> no choosing — you always move as <b>🦌 Deer</b>.</div></div>
+      <div class="key"><i></i><div><b>Renew:</b> each level starts after <b>5 sec</b>. Levels go up to <b>30</b>; enemies spawn faster, move faster, and become more numerous.</div></div>
+      <div class="key"><i></i><div><b>Level clear:</b> when enemy count becomes smaller than your life, the final clash begins. If every remaining enemy bumps into you and you stay alive, you clear the level.</div></div>
+      <div class="key"><i></i><div><b>Same Deer:</b> if a 🦌 enemy survives <b>10 sec</b> without bumping you, it automatically becomes your one-life ally.</div></div>
+      <div class="key"><i></i><div><b>Gift mark 🎁:</b> move close to it to collect — no perfect overlap needed.</div></div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-title"><h2>Immuno + gifts</h2><span>🎁</span></div>
+      <div class="small">No player missiles anymore. Click/tap the map or press <b>Space</b> to activate Immuno. Emoji powers now come from random gift boxes that appear when each new level starts.</div>
+      <div class="ability-list" id="abilityList"></div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-title"><h2>Status</h2><span>📍</span></div>
+      <div class="metrics">
+        <div class="metric"><span>Life</span><b id="heartText">5</b></div>
+        <div class="metric"><span>Kills</span><b id="killText">0</b></div>
+        <div class="metric"><span>Allies</span><b id="allyText">0</b></div>
+        <div class="metric"><span>Enemy shots</span><b id="activeText">1</b></div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div id="world" aria-label="Ability chase game map">
+      <div id="worldHint">You are the Deer. Press Start, move with mouse, click/tap or Space to activate Immuno.</div>
+      <div id="effectLayer"></div>
+      <div id="entityLayer"></div>
+      <div class="overlay" id="overlay">
+        <div class="modal">
+          <span class="emoji" id="modalEmoji">🦌</span>
+          <h2 id="modalTitle">SummerDeer Wins</h2>
+          <p id="modalText">You cleared the map.</p>
+          <button class="btn primary" id="modalBtn" type="button">Play again</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span>Move with mouse · click/tap or Space activates Immuno · gifts give emoji powers · enemy missiles scale with your life · survive level 30</span>
+  </footer>
+</div>
+<div id="toast">Ready</div>
+
+<script>
+'use strict';
+
+const $ = q => document.querySelector(q);
+const world = $('#world');
+const entityLayer = $('#entityLayer');
+const effectLayer = $('#effectLayer');
+const STORE_KEY = 'summerdeer.deer.immuno.best.v1';
+const MAX_LEVEL = 30;
+const SAME_ALLY_SECONDS = 10;
+const IMMUNE_DURATION = 5000;
+const IMMUNE_COOLDOWN = 6500;
+const ENTITY_GAP = 3;
+const HUGE_SCALE = 2.25; // only visual power now; no instant win
+const GIFT_TYPES = [
+  {kind:'allies', emoji:'🎁', name:'Ally Gift', desc:'Blessed: 3 one-life Deer allies appear around you.'},
+  {kind:'immune', emoji:'🎁', name:'Immuno Gift', desc:'Blessed: Immuno turns on for 5 seconds.'},
+  {kind:'life', emoji:'🎁', name:'Life Gift', desc:'Blessed: +3 life immediately.'},
+  {kind:'time', emoji:'🎁', name:'Moon Gift', desc:'Moon power: enemies freeze for 3 seconds.'},
+  {kind:'root', emoji:'🎁', name:'Tree Gift', desc:'Tree power: a root circle slows enemies for 5 seconds.'},
+  {kind:'shield', emoji:'🎁', name:'Water Gift', desc:'Water power: pushes enemies away and gives a short shield glow.'},
+  {kind:'nova', emoji:'🎁', name:'Star Gift', desc:'Star power: deletes the three nearest enemies.'},
+  {kind:'burn', emoji:'🎁', name:'Fire Gift', desc:'Fire power: burn aura vanishes nearby enemies for 5 seconds.'},
+  {kind:'home', emoji:'🎁', name:'Home Gift', desc:'Home power: safe beacon slows nearby enemies.'},
+  {kind:'push', emoji:'🎁', name:'Factory Gift', desc:'Factory power: pulse pushes and stuns enemies.'}
+];
+
+const SAMPLES = [
+  {type:'deer', emoji:'🦌', name:'Deer', short:'DEER', color:'#f1b85b', ability:'Peace Call', desc:'A warm spirit burst. Active ability calms the two nearest hostile enemies. Same-kind enemies become allies automatically if they avoid bumping you for 10 seconds.'},
+  {type:'moon', emoji:'🌙', name:'Moon', short:'MOON', color:'#b89cff', ability:'Time Stop', desc:'Stops time for all hostile enemies for 4 seconds. Frozen enemies cannot chase, attack, or escape ally hunters.'},
+  {type:'tree', emoji:'🌲', name:'Tree', short:'ROOT', color:'#87d9c1', ability:'Root Field', desc:'Grows a root circle around you for 5 seconds. Enemies inside the circle become slow and easy to vanish.'},
+  {type:'water', emoji:'💧', name:'Water', short:'WAVE', color:'#79b7ff', ability:'Ripple Shield', desc:'Creates a protective ripple for 5 seconds. It pushes enemies away and protects your harmony from one collision.'},
+  {type:'star', emoji:'✨', name:'Star', short:'NOVA', color:'#ffe083', ability:'Star Nova', desc:'A bright nova deletes the three nearest enemies immediately. Very good when the map gets crowded.'},
+  {type:'fire', emoji:'🔥', name:'Fire', short:'BURN', color:'#ff7a59', ability:'Burn Aura', desc:'Surrounds you with fire for 5 seconds. Any hostile enemy touching the burn aura vanishes.'},
+  {type:'home', emoji:'🏠', name:'Home', short:'SAFE', color:'#f1b85b', ability:'Safe House', desc:'Places a safe beacon that slows nearby enemies and creates a safer space while same-kind enemies wait out their 10-second automatic ally timer.'},
+  {type:'factory', emoji:'🏭', name:'Factory', short:'PUSH', color:'#b7c0c8', ability:'Magnet Pulse', desc:'A heavy pulse knocks enemies away and stuns them for 2 seconds. Useful for escaping dense waves.'}
+];
+const sampleByType = Object.fromEntries(SAMPLES.map(s => [s.type, s]));
+
+const state = {
+  running:false,
+  stage:'choose',
+  selectedType:'deer',
+  sameMode:'ally',
+  level:1,
+  waveDue:0,
+  enemies:[],
+  allies:[],
+  projectiles:[],
+  effects:[],
+  gifts:[],
+  player:null,
+  target:{x:0,y:0},
+  facing:{x:1,y:0},
+  charges:{},
+  activeType:null,
+  cooldownUntil:0,
+  immuneCooldownUntil:0,
+  attackCooldown:0,
+  frozenUntil:0,
+  immuneUntil:0,
+  shieldUntil:0,
+  burnUntil:0,
+  health:5,
+  size:1,
+  dominationAt:0,
+  kills:0,
+  score:0,
+  best:Number(localStorage.getItem(STORE_KEY) || 0),
+  lastTime:performance.now(),
+  finalClash:false,
+  nextGiftAt:0,
+  damageCooldown:0,
+  waveSpawned:false,
+  gameOver:false
+};
+
+function uid(prefix='id'){
+  return prefix + '_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36);
+}
+function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+function lerp(a,b,t){return a+(b-a)*t;}
+function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function rect(){return world.getBoundingClientRect();}
+function levelDelay(level){return 5;}
+function levelCount(level){return 5 + (level-1)*3 + Math.floor(level*level/14);}
+function levelSpeed(level){return 62 + level*9;}
+function enemyMissileCapacity(){return 1 + Math.floor(Math.max(0, state.health) / 50);}
+function now(){return performance.now();}
+
+let toastTimer;
+function showToast(text){
+  const t = $('#toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1900);
+}
+
+function renderSamples(){ /* Deer-only mode: no sample chooser. */ }
+
+function explain(s){
+  $('#abilityExplain').innerHTML = `
+    <div><span class="big">${s.emoji}</span><strong>${s.name} · ${s.ability}</strong></div>
+    <p>${s.desc}</p>
+  `;
+}
+
+function chooseSample(type='deer'){
+  state.selectedType = 'deer';
+  state.activeType = 'immune';
+  const s = sampleByType.deer;
+  if($('#abilityExplain')){
+    $('#abilityExplain').innerHTML = `
+      <div><span class="big">${s.emoji}</span><strong>Deer · Immuno Body</strong></div>
+      <p>You are always the Deer. Click/tap or press <b>Space</b> to activate Immuno. During Immuno, enemy bumps and missiles give +1 life; without Immuno, they cost -1 life.</p>
+    `;
+  }
+  const r = rect();
+  state.player = {x:r.width/2, y:r.height/2, type:'deer', emoji:s.emoji};
+  state.target = {x:r.width/2, y:r.height/2};
+  updateUI();
+  render();
+}
+
+function resetRun(keepChoice=true){
+  const type = 'deer';
+  state.running = false;
+  state.stage = 'ready';
+  state.level = 1;
+  state.waveDue = 0;
+  state.enemies = [];
+  state.allies = [];
+  state.projectiles = [];
+  state.effects = [];
+  state.gifts = [];
+  state.charges = {};
+  state.activeType = 'immune';
+  state.cooldownUntil = 0;
+  state.immuneCooldownUntil = 0;
+  state.attackCooldown = 0;
+  state.frozenUntil = 0;
+  state.immuneUntil = 0;
+  state.shieldUntil = 0;
+  state.burnUntil = 0;
+  state.health = 5;
+  state.size = 1;
+  state.dominationAt = 0;
+  state.kills = 0;
+  state.score = 0;
+  state.damageCooldown = 0;
+  state.finalClash = false;
+  state.nextGiftAt = 0;
+  state.waveSpawned = false;
+  state.gameOver = false;
+  $('#overlay').classList.remove('show');
+  if(type){
+    const r = rect();
+    const s = sampleByType[type];
+    state.player = {x:r.width/2, y:r.height/2, type, emoji:s.emoji};
+    state.target = {x:r.width/2, y:r.height/2};
+  }else{
+    state.selectedType = null;
+    state.player = null;
+    document.querySelectorAll('.sample-btn').forEach(b => b.classList.remove('selected'));
+  }
+  showToast('Run reset. Press Start game.');
+  updateUI();
+  render();
+}
+
+function startGame(){
+  chooseSample('deer');
+  resetRun(true);
+  state.running = true;
+  state.stage = 'countdown';
+  state.waveDue = now() + levelDelay(state.level)*1000;
+  state.nextGiftAt = Infinity;
+  spawnGift();
+  $('#overlay').classList.remove('show');
+  showToast(`Level ${state.level}: gift is on the map · enemies renew in ${levelDelay(state.level)} sec`);
+}
+
+function spawnWave(){
+  const count = levelCount(state.level);
+  for(let i=0;i<count;i++) spawnEnemy(i);
+  state.stage = 'fight';
+  state.waveSpawned = true;
+  state.finalClash = false;
+  state.nextGiftAt = Infinity;
+  showToast(`Level ${state.level}: ${count} enemies appeared`);
+}
+
+function spawnEnemy(i=0){
+  const r = rect();
+  let type;
+  if(Math.random() < 0.24 && state.selectedType) type = state.selectedType;
+  else type = SAMPLES[Math.floor(Math.random()*SAMPLES.length)].type;
+  const s = sampleByType[type];
+  const edge = Math.floor(Math.random()*4);
+  const pad = 34;
+  let x,y;
+  if(edge === 0){x=Math.random()*r.width; y=-pad;}
+  else if(edge === 1){x=r.width+pad; y=Math.random()*r.height;}
+  else if(edge === 2){x=Math.random()*r.width; y=r.height+pad;}
+  else {x=-pad; y=Math.random()*r.height;}
+
+  const enemy = {
+    id:uid('enemy'), type, emoji:s.emoji, x, y, vx:0, vy:0,
+    speed:levelSpeed(state.level) + Math.random()*(28 + state.level*2),
+    sameAge:0,
+    stunUntil:0,
+    born:now()+i*20,
+    shotCap:enemyMissileCapacity(),
+    shotsLeft:enemyMissileCapacity(),
+    nextShotAt:now() + 850 + Math.random()*1800
+  };
+  state.enemies.push(enemy);
+  resolveOverlaps(4);
+}
+
+function spawnGift(){
+  if(!state.running || !state.player) return;
+  const r = rect();
+  const gift = GIFT_TYPES[Math.floor(Math.random()*GIFT_TYPES.length)];
+  const p = findFreePoint(26, 54, r.width - 54, 64, r.height - 64);
+  state.gifts.push({
+    id:uid('gift'), kind:gift.kind, emoji:'🎁', name:gift.name, desc:gift.desc,
+    x:p.x,
+    y:p.y,
+    until:now() + 15000
+  });
+  resolveOverlaps(4);
+  showToast('A gift mark appeared — take it to become blessed');
+}
+
+function addBlessedAllies(n=3){
+  if(!state.player || !state.selectedType) return;
+  const s = sampleByType[state.selectedType];
+  const r = rect();
+  for(let i=0;i<n;i++){
+    const a = (Math.PI*2/n)*i + Math.random()*.3;
+    const p = findFreePointAround(state.player.x, state.player.y, 66 + i*10, 24, 28, r.width-28, 28, r.height-28, a);
+    state.allies.push({
+      id:uid('ally'), type:state.selectedType, emoji:s.emoji,
+      x:p.x,
+      y:p.y,
+      speed:116 + state.level*5, cooldown:0, attachAngle:a
+    });
+  }
+  resolveOverlaps(5);
+  addEffect('ring', state.player.x, state.player.y, {radius:170, className:'green'});
+}
+
+function takeGift(gift){
+  const i = state.gifts.indexOf(gift);
+  if(i >= 0) state.gifts.splice(i,1);
+  const t = now();
+  const p = state.player;
+  if(gift.kind === 'allies'){
+    addBlessedAllies(3);
+    popText('gift · 3 allies', p.x, p.y-34);
+    showToast('Gift power: 3 one-life Deer allies joined');
+  }else if(gift.kind === 'immune'){
+    state.immuneUntil = Math.max(state.immuneUntil, t + IMMUNE_DURATION);
+    state.immuneCooldownUntil = Math.max(state.immuneCooldownUntil, t + IMMUNE_COOLDOWN);
+    addEffect('ring', p.x, p.y, {radius:190, className:'gold'});
+    popText('immuno 5s', p.x, p.y-34);
+    showToast('Gift power: Immuno for 5 seconds');
+  }else if(gift.kind === 'life'){
+    state.health += 3;
+    state.size = Math.min(2.75, state.size + 0.06);
+    addEffect('ring', p.x, p.y, {radius:150, className:'green'});
+    popText('+3 life', p.x, p.y-34);
+    showToast('Gift power: +3 life');
+  }else if(gift.kind === 'time'){
+    state.frozenUntil = Math.max(state.frozenUntil, t + 3000);
+    addEffect('ring', p.x, p.y, {radius:190, className:'blue'});
+    popText('time stop 3s', p.x, p.y-34);
+    showToast('Gift power: Moon Time Stop');
+  }else if(gift.kind === 'root'){
+    state.effects.push({id:uid('zone'), kind:'zone', className:'', x:p.x, y:p.y, radius:155, born:t, until:t+5000});
+    showToast('Gift power: Tree Root Field');
+  }else if(gift.kind === 'shield'){
+    state.shieldUntil = t + 3500;
+    addEffect('ring', p.x, p.y, {radius:180, className:'blue'});
+    state.enemies.forEach(e => pushAway(e, p, 130));
+    showToast('Gift power: Water Push');
+  }else if(gift.kind === 'nova'){
+    nearestEnemies(3).forEach(e => vanishEnemy(e, 'gift'));
+    addEffect('ring', p.x, p.y, {radius:205, className:'gold'});
+    showToast('Gift power: Star Nova');
+  }else if(gift.kind === 'burn'){
+    state.burnUntil = t + 5000;
+    state.effects.push({id:uid('zone'), kind:'zone', className:'fire', x:p.x, y:p.y, radius:82, born:t, until:t+5000, follow:true});
+    showToast('Gift power: Fire Aura');
+  }else if(gift.kind === 'home'){
+    state.effects.push({id:uid('zone'), kind:'zone', className:'home', x:p.x, y:p.y, radius:130, born:t, until:t+8000, beacon:true});
+    showToast('Gift power: Home Safe Beacon');
+  }else if(gift.kind === 'push'){
+    addEffect('ring', p.x, p.y, {radius:210, className:'red'});
+    state.enemies.forEach(e => { if(distance(p,e) < 210){ pushAway(e, p, 190); e.stunUntil = t + 2000; }});
+    showToast('Gift power: Factory Pulse');
+  }
+  updateUI();
+}
+
+function startFinalClash(){
+  if(state.finalClash || !state.running || state.stage !== 'fight' || state.enemies.length <= 0) return;
+  state.finalClash = true;
+  state.enemies.forEach(e => { e.sameAge = 0; e.speed = Math.max(e.speed, levelSpeed(state.level) * 1.75); });
+  addEffect('ring', state.player.x, state.player.y, {radius:230, className:'red'});
+  showToast(`Final clash: ${state.enemies.length} enemies < life ${state.health}. Survive all bumps to clear level.`);
+}
+
+function clearLevelBySurvival(){
+  if(!state.running) return;
+  if(state.level >= MAX_LEVEL){ winGame(); return; }
+  state.level++;
+  state.stage = 'countdown';
+  state.waveSpawned = false;
+  state.finalClash = false;
+  state.gifts = [];
+  const t = now();
+  state.waveDue = t + levelDelay(state.level)*1000;
+  state.nextGiftAt = Infinity;
+  state.health = Math.min(state.health + 1, 999);
+  spawnGift();
+  showToast(`You survived the clash. Level ${state.level} begins in ${levelDelay(state.level)} sec.`);
+}
+
+function addEffect(kind,x,y,opts={}){
+  const effect = {id:uid('fx'), kind, x, y, born:now(), until:now()+(opts.duration||500), radius:opts.radius||95, className:opts.className||''};
+  state.effects.push(effect);
+  return effect;
+}
+function popText(text,x,y){
+  const el = document.createElement('div');
+  el.className = 'poptext';
+  el.textContent = text;
+  el.style.left = x+'px';
+  el.style.top = y+'px';
+  world.appendChild(el);
+  setTimeout(()=>el.remove(),1200);
+}
+
+function vanishEnemy(enemy, source='player'){
+  const idx = state.enemies.indexOf(enemy);
+  if(idx < 0) return;
+  state.enemies.splice(idx,1);
+  state.kills++;
+  state.score += 10 + state.level*3;
+  state.health += 1;
+  state.size = Math.min(2.75, state.size + 0.055);
+  const s = sampleByType[enemy.type];
+  addEffect('ring', enemy.x, enemy.y, {radius:90, className: enemy.type === 'water' || enemy.type === 'moon' ? 'blue' : (enemy.type === 'fire' ? 'red' : 'green')});
+  popText('+life · bigger', enemy.x, enemy.y-12);
+  if(source === 'ally') showToast(`One-life ally captured ${s.emoji} and vanished`);
+  if(state.running && state.size >= HUGE_SCALE && state.enemies.length > 0){
+    popText('huge power', state.player.x, state.player.y-48);
+  }
+  updateBest();
+}
+
+function convertToAlly(enemy){
+  const idx = state.enemies.indexOf(enemy);
+  if(idx < 0) return;
+  state.enemies.splice(idx,1);
+  state.allies.push({
+    id:uid('ally'), type:enemy.type, emoji:enemy.emoji, x:enemy.x, y:enemy.y,
+    speed:96 + state.level*3, cooldown:0, attachAngle:Math.random()*Math.PI*2
+  });
+  addEffect('ring', enemy.x, enemy.y, {className:'green', radius:120});
+  popText('ally', enemy.x, enemy.y-12);
+  showToast(`${enemy.emoji} stayed safe for 10 sec and attached as your one-life ally`);
+}
+
+
+function removeEnemyNoLife(enemy, source='ally'){
+  const idx = state.enemies.indexOf(enemy);
+  if(idx < 0) return;
+  state.enemies.splice(idx,1);
+  state.kills++;
+  state.score += 8 + state.level*2;
+  const s = sampleByType[enemy.type];
+  addEffect('ring', enemy.x, enemy.y, {radius:82, className: enemy.type === 'water' || enemy.type === 'moon' ? 'blue' : (enemy.type === 'fire' ? 'red' : 'green')});
+  popText(source === 'ally' ? 'ally guard' : 'vanished', enemy.x, enemy.y-12);
+  updateBest();
+}
+
+function playerRadius(){
+  return 31 * state.size;
+}
+
+function contactRadiusForEnemy(){
+  return Math.max(28, playerRadius() * 0.72);
+}
+
+function updateAttachedAllies(dt){
+  if(!state.player || !state.allies.length) return;
+  const base = playerRadius() + 25;
+  const n = state.allies.length;
+  state.allies.forEach((a, i) => {
+    if(typeof a.attachAngle !== 'number') a.attachAngle = (Math.PI * 2 / Math.max(1, n)) * i;
+    const orbit = a.attachAngle + now() / 1700;
+    const ring = base + (i % 2) * 9;
+    const tx = state.player.x + Math.cos(orbit) * ring;
+    const ty = state.player.y + Math.sin(orbit) * ring;
+    const follow = 1 - Math.pow(.0004, dt);
+    a.x = lerp(a.x, tx, follow);
+    a.y = lerp(a.y, ty, follow);
+  });
+}
+function updateBest(){
+  const levelScore = state.level*100 + state.score;
+  if(levelScore > state.best){
+    state.best = levelScore;
+    localStorage.setItem(STORE_KEY, String(state.best));
+  }
+}
+
+function activateImmune(){
+  if(!state.running || !state.player) return;
+  const t = now();
+  if(t < state.immuneUntil){ showToast('Immuno is already active'); return; }
+  if(t < state.immuneCooldownUntil){
+    showToast(`Immuno recovery: ${Math.ceil((state.immuneCooldownUntil - t)/1000)}s`);
+    return;
+  }
+  state.immuneUntil = t + IMMUNE_DURATION;
+  state.immuneCooldownUntil = t + IMMUNE_COOLDOWN;
+  addEffect('ring', state.player.x, state.player.y, {radius:190, className:'gold'});
+  popText('immuno 5s', state.player.x, state.player.y-34);
+  showToast('Immuno active: bump enemies/missiles to gain life');
+}
+
+function shootEnemyMissile(enemy){
+  if(!state.player || enemy.shotsLeft <= 0) return;
+  const t = now();
+  enemy.shotsLeft -= 1;
+  enemy.nextShotAt = t + 2800 + Math.random()*2600;
+  let dx = state.player.x - enemy.x;
+  let dy = state.player.y - enemy.y;
+  const len = Math.hypot(dx,dy) || 1;
+  dx /= len; dy /= len;
+  const speed = 165 + state.level*7 + Math.min(120, state.health*0.8);
+  state.projectiles.push({
+    id:uid('emissile'), owner:'enemy', emoji:'✦', x:enemy.x, y:enemy.y,
+    vx:dx*speed, vy:dy*speed, radius:10, until:t+5200, hit:false
+  });
+  popText('✦', enemy.x, enemy.y-14);
+}
+
+function shootVamples(targetPoint=null){
+  activateImmune();
+}
+
+function nearestEnemies(n=1){
+  if(!state.player) return [];
+  return [...state.enemies]
+    .sort((a,b) => distance(state.player,a) - distance(state.player,b))
+    .slice(0,n);
+}
+
+function useAbility(type=state.activeType){
+  if(!state.running || !state.player || !type) return;
+  const t = now();
+  const own = type === state.selectedType;
+  if(own && t < state.cooldownUntil){
+    showToast('Your own ability is cooling down');
+    return;
+  }
+  if(!own){
+    const c = state.charges[type] || 0;
+    if(c <= 0){ showToast('No charge for this ability yet'); return; }
+    state.charges[type] = c - 1;
+  }else{
+    state.cooldownUntil = t + 6200;
+  }
+
+  const p = state.player;
+  const s = sampleByType[type];
+  if(type === 'deer'){
+    const targets = nearestEnemies(2);
+    targets.forEach(e => vanishEnemy(e, 'ability'));
+    addEffect('ring', p.x, p.y, {radius:160, className:'green'});
+    showToast('Peace Call calmed the nearest enemies');
+  }else if(type === 'moon'){
+    state.frozenUntil = t + 4000;
+    addEffect('ring', p.x, p.y, {radius:190, className:'blue'});
+    showToast('Time Stop: enemies frozen for 4 sec');
+  }else if(type === 'tree'){
+    state.effects.push({id:uid('zone'), kind:'zone', className:'', x:p.x, y:p.y, radius:155, born:t, until:t+5000});
+    showToast('Root Field is growing');
+  }else if(type === 'water'){
+    state.shieldUntil = t + 5000;
+    addEffect('ring', p.x, p.y, {radius:180, className:'blue'});
+    state.enemies.forEach(e => pushAway(e, p, 130));
+    showToast('Ripple Shield protects and pushes enemies');
+  }else if(type === 'star'){
+    const targets = nearestEnemies(3);
+    targets.forEach(e => vanishEnemy(e, 'ability'));
+    addEffect('ring', p.x, p.y, {radius:200, className:'gold'});
+    showToast('Star Nova deleted the nearest enemies');
+  }else if(type === 'fire'){
+    state.burnUntil = t + 5000;
+    state.effects.push({id:uid('zone'), kind:'zone', className:'fire', x:p.x, y:p.y, radius:80, born:t, until:t+5000, follow:true});
+    showToast('Burn Aura is active');
+  }else if(type === 'home'){
+    state.effects.push({id:uid('zone'), kind:'zone', className:'home', x:p.x, y:p.y, radius:130, born:t, until:t+8000, beacon:true});
+    showToast('Safe House beacon placed');
+  }else if(type === 'factory'){
+    addEffect('ring', p.x, p.y, {radius:210, className:'red'});
+    state.enemies.forEach(e => {
+      if(distance(p,e) < 210){
+        pushAway(e, p, 190);
+        e.stunUntil = t + 2000;
+      }
+    });
+    showToast('Magnet Pulse pushed and stunned enemies');
+  }
+  state.activeType = 'immune';
+  updateUI();
+}
+
+function pushAway(e, center, force){
+  const dx = e.x - center.x;
+  const dy = e.y - center.y;
+  const len = Math.hypot(dx,dy) || 1;
+  e.x += dx/len * force;
+  e.y += dy/len * force;
+  const r = rect();
+  e.x = clamp(e.x, -40, r.width+40);
+  e.y = clamp(e.y, -40, r.height+40);
+}
+
+function entityRadius(body){
+  if(body.kind === 'player') return 31 * state.size;
+  if(body.kind === 'projectile') return 15;
+  if(body.kind === 'gift') return 25;
+  return 24;
+}
+
+function collisionBodies(){
+  const bodies = [];
+  if(state.player) bodies.push({kind:'player', obj:state.player, radius:entityRadius({kind:'player'})});
+  state.enemies.forEach(obj => bodies.push({kind:'enemy', obj, radius:24}));
+  state.allies.forEach(obj => bodies.push({kind:'ally', obj, radius:24}));
+  state.gifts.forEach(obj => bodies.push({kind:'gift', obj, radius:25}));
+  return bodies;
+}
+
+function keepBodyInside(body){
+  const r = rect();
+  const rad = body.radius || 24;
+  if(body.kind === 'enemy'){
+    body.obj.x = clamp(body.obj.x, -42, r.width + 42);
+    body.obj.y = clamp(body.obj.y, -42, r.height + 42);
+  }else{
+    body.obj.x = clamp(body.obj.x, rad + ENTITY_GAP, r.width - rad - ENTITY_GAP);
+    body.obj.y = clamp(body.obj.y, rad + ENTITY_GAP, r.height - rad - ENTITY_GAP);
+  }
+}
+
+function enemyCollisionBodies(){
+  return state.enemies.map(obj => ({kind:'enemy', obj, radius:24}));
+}
+
+function resolveOverlaps(iterations=3){
+  // Enemy-only spacing: enemies cannot overlap each other in the 2D space.
+  // Player, gifts, and allies keep their original movement/placement behavior.
+  const bodies = enemyCollisionBodies();
+  if(bodies.length < 2) return;
+  for(let k=0;k<iterations;k++){
+    for(let i=0;i<bodies.length;i++){
+      for(let j=i+1;j<bodies.length;j++){
+        const a = bodies[i], b = bodies[j];
+        const dx = b.obj.x - a.obj.x;
+        const dy = b.obj.y - a.obj.y;
+        let d = Math.hypot(dx,dy);
+        const minD = a.radius + b.radius + ENTITY_GAP;
+        if(d >= minD) continue;
+        if(d < 0.001) { d = 0.001; }
+        const nx = dx / d || Math.cos((i+j+1)*1.7);
+        const ny = dy / d || Math.sin((i+j+1)*1.7);
+        const overlap = (minD - d);
+
+        a.obj.x -= nx * overlap * .5;
+        a.obj.y -= ny * overlap * .5;
+        b.obj.x += nx * overlap * .5;
+        b.obj.y += ny * overlap * .5;
+        keepBodyInside(a);
+        keepBodyInside(b);
+      }
+    }
+  }
+}
+
+function overlapsExistingPoint(x,y,radius=24){
+  const temp = {x,y};
+  return collisionBodies().some(b => distance(temp, b.obj) < radius + b.radius + ENTITY_GAP + 4);
+}
+
+function findFreePoint(radius=24, minX=40, maxX=null, minY=54, maxY=null){
+  const r = rect();
+  maxX = maxX == null ? r.width - 40 : maxX;
+  maxY = maxY == null ? r.height - 54 : maxY;
+  for(let tries=0; tries<120; tries++){
+    const x = minX + Math.random() * Math.max(1, maxX-minX);
+    const y = minY + Math.random() * Math.max(1, maxY-minY);
+    if(!overlapsExistingPoint(x,y,radius)) return {x,y};
+  }
+  return {x:clamp((minX+maxX)/2, radius+ENTITY_GAP, r.width-radius-ENTITY_GAP), y:clamp((minY+maxY)/2, radius+ENTITY_GAP, r.height-radius-ENTITY_GAP)};
+}
+
+function findFreePointAround(cx,cy,baseDist,radius,minX,maxX,minY,maxY,startAngle=0){
+  for(let tries=0; tries<72; tries++){
+    const a = startAngle + tries * 0.72;
+    const d = baseDist + Math.floor(tries/10) * 24;
+    const x = clamp(cx + Math.cos(a)*d, minX, maxX);
+    const y = clamp(cy + Math.sin(a)*d, minY, maxY);
+    if(!overlapsExistingPoint(x,y,radius)) return {x,y};
+  }
+  return findFreePoint(radius, minX, maxX, minY, maxY);
+}
+
+function update(dt){
+  if(!state.player){ render(); updateUI(); return; }
+  const r = rect();
+  const t = now();
+
+  // player follows mouse/target softly
+  const follow = state.running ? 1 - Math.pow(.001, dt) : 0.18;
+  state.player.x = lerp(state.player.x, clamp(state.target.x, 26, r.width-26), follow);
+  state.player.y = lerp(state.player.y, clamp(state.target.y, 26, r.height-26), follow);
+
+  // Level countdown and spawning
+  if(state.running && state.stage === 'countdown' && t >= state.waveDue){
+    spawnWave();
+  }
+
+  // Effects cleanup and following fire aura
+  state.effects = state.effects.filter(e => e.until > t);
+  state.effects.forEach(e => {
+    if(e.follow && state.player){ e.x = state.player.x; e.y = state.player.y; }
+  });
+
+  // Gift marks appear during hard waves and bless the player when touched.
+  state.gifts = state.gifts.filter(g => g.until > t);
+  // Gifts now appear at each new level start only.
+  if(false){ spawnGift(); }
+  [...state.gifts].forEach(g => {
+    const d = distance(state.player,g);
+    const takeRange = playerRadius() + 48;
+    if(d < takeRange + 58){
+      const dx = state.player.x - g.x;
+      const dy = state.player.y - g.y;
+      const len = Math.hypot(dx,dy) || 1;
+      g.x += dx/len * 70 * dt;
+      g.y += dy/len * 70 * dt;
+    }
+    if(d < takeRange) takeGift(g);
+  });
+
+  // Burn aura kills close enemies
+  if(state.running && t < state.burnUntil){
+    [...state.enemies].forEach(e => { if(distance(state.player,e) < 76) vanishEnemy(e, 'ability'); });
+  }
+  // Enemy missiles fly toward the Deer. No player missiles are used anymore.
+  state.projectiles = state.projectiles.filter(p => p.until > t && !p.hit);
+  [...state.projectiles].forEach(p => {
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    if(p.x < -80 || p.x > r.width+80 || p.y < -80 || p.y > r.height+80){ p.hit = true; return; }
+    if(distance(p, state.player) < playerRadius()*0.55 + p.radius){
+      p.hit = true;
+      if(t < state.immuneUntil){
+        state.health += 1;
+        state.size = Math.min(2.75, state.size + 0.025);
+        popText('+1 immune missile', state.player.x, state.player.y-42);
+        addEffect('ring', state.player.x, state.player.y, {radius:88, className:'green'});
+      }else{
+        state.health -= 1;
+        popText('-1 missile', state.player.x, state.player.y-42);
+        addEffect('ring', state.player.x, state.player.y, {radius:88, className:'red'});
+        if(state.health <= 0) loseGame();
+      }
+    }
+  });
+  state.projectiles = state.projectiles.filter(p => p.until > t && !p.hit);
+
+
+  // Enemies chase and same-kind checking
+  const rootZones = state.effects.filter(e => e.kind === 'zone' && !e.beacon);
+  const homeZones = state.effects.filter(e => e.beacon);
+  [...state.enemies].forEach(e => {
+    let speed = e.speed;
+    if(state.finalClash) speed *= 1.85;
+    if(t < state.frozenUntil || t < e.stunUntil) speed = 0;
+    rootZones.forEach(z => { if(distance(e,z) < z.radius) speed *= .25; });
+
+    const currentCap = enemyMissileCapacity();
+    if((e.shotCap || 0) < currentCap){
+      e.shotsLeft = (e.shotsLeft || 0) + (currentCap - (e.shotCap || 0));
+      e.shotCap = currentCap;
+    }
+    if(state.running && state.stage === 'fight' && !state.finalClash && speed > 0 && e.shotsLeft > 0 && t >= e.nextShotAt){
+      shootEnemyMissile(e);
+    }
+
+    const dx = state.player.x - e.x;
+    const dy = state.player.y - e.y;
+    const len = Math.hypot(dx,dy) || 1;
+    e.x += dx/len * speed * dt;
+    e.y += dy/len * speed * dt;
+
+    // Same sample rule: no checking/chasing timer. If it avoids bumping into you for 10 seconds, it automatically becomes a one-life ally.
+    if(e.type === state.selectedType && state.sameMode === 'ally' && !state.finalClash){
+      e.sameAge = (e.sameAge || 0) + dt;
+      if(e.sameAge >= SAME_ALLY_SECONDS){
+        convertToAlly(e);
+        return;
+      }
+    }
+
+    // Enemy contact rule: enemy vanishes on bump. Immuno gives +1 life; no Immuno costs -1 life.
+    const bodyTouch = distance(e,state.player) < contactRadiusForEnemy();
+    if(bodyTouch){
+      const immuneNow = t < state.immuneUntil;
+      const ei = state.enemies.indexOf(e);
+      if(ei >= 0) state.enemies.splice(ei,1);
+      state.damageCooldown = t + 180;
+      addEffect('ring', e.x, e.y, {radius:90, className: immuneNow ? 'green' : 'red'});
+      if(immuneNow){
+        state.health += 1;
+        state.size = Math.min(2.75, state.size + 0.03);
+        popText('+1 immune bump', state.player.x, state.player.y-28);
+      }else{
+        state.health -= 1;
+        popText('-1 life', state.player.x, state.player.y-28);
+        showToast('Enemy bumped you and vanished · life -1');
+        if(state.health <= 0) loseGame();
+      }
+      return;
+    }
+  });
+
+  // Allies attach to your big sample as one-life guards. If an enemy touches an ally, enemy + ally vanish; your life does not change.
+  updateAttachedAllies(dt);
+  [...state.allies].forEach(a => {
+    for(const target of [...state.enemies]){
+      if(distance(a,target) < 30){
+        removeEnemyNoLife(target, 'ally');
+        const ai = state.allies.indexOf(a);
+        if(ai >= 0) state.allies.splice(ai, 1);
+        popText('ally guard used', a.x, a.y-16);
+        addEffect('ring', a.x, a.y, {radius:86, className:'green'});
+        break;
+      }
+    }
+  });
+
+  // Keep enemy dots separated in 2D space. Player, gifts, and allies keep the same behavior.
+  state.player.x = clamp(state.player.x, 24, r.width-24);
+  state.player.y = clamp(state.player.y, 24, r.height-24);
+  state.allies.forEach(a => { a.x = clamp(a.x, 20, r.width-20); a.y = clamp(a.y, 20, r.height-20); });
+  resolveOverlaps(5);
+
+  // New winning rule: no instant big win. Reduce the shown enemies until enemy count is smaller than life; then survive the final clash.
+  if(state.running && state.stage === 'fight' && !state.finalClash && state.enemies.length > 0 && state.enemies.length < state.health){
+    startFinalClash();
+  }
+
+  // Level clear only after enemies are gone, normally by the final clash or by careful vanishing.
+  if(state.running && state.stage === 'fight' && state.enemies.length === 0){
+    clearLevelBySurvival();
+  }
+
+  updateBest();
+  render();
+  updateUI();
+}
+
+function nearestTo(from, list){
+  let best = null, bestD = Infinity;
+  list.forEach(e => { const d=distance(from,e); if(d<bestD){bestD=d; best=e;} });
+  return best;
+}
+
+function winGame(){
+  state.running = false;
+  state.stage = 'won';
+  $('#modalEmoji').textContent = '🦌✨';
+  $('#modalTitle').textContent = `You survived level ${MAX_LEVEL}`;
+  $('#modalText').textContent = `Victory by final clash through level ${MAX_LEVEL}: enemies became fewer than your life, rushed into you, and you survived. Life: ${state.health}. Score: ${state.score}.`;
+  $('#overlay').classList.add('show');
+  showToast('Victory — all enemies vanished');
+}
+function loseGame(){
+  state.running = false;
+  state.stage = 'lost';
+  $('#modalEmoji').textContent = '🌙';
+  $('#modalTitle').textContent = 'Harmony faded';
+  $('#modalText').textContent = 'Enemies and missiles drained your life. Replay and time your Immuno carefully.';
+  $('#overlay').classList.add('show');
+}
+
+function render(){
+  const t = now();
+  let html = '';
+  if(state.player){
+    const shield = t < state.shieldUntil ? '<span class="tag">shield</span>' : '';
+    const immune = t < state.immuneUntil ? '<span class="tag">immune</span>' : '';
+    const big = state.size >= HUGE_SCALE ? ' big' : '';
+    const blessed = (t < state.immuneUntil || t < state.shieldUntil) ? ' blessed' : '';
+    html += `<div class="entity player${big}${blessed}" style="left:${state.player.x}px;top:${state.player.y}px;--scale:${state.size.toFixed(2)}">${state.player.emoji}<span class="tag life">life ${state.health}</span>${shield}${immune}</div>`;
+  }
+  for(const e of state.enemies){
+    const same = e.type === state.selectedType;
+    const frozen = t < state.frozenUntil || t < e.stunUntil;
+    const allyPct = clamp((e.sameAge || 0)/SAME_ALLY_SECONDS*100,0,100);
+    const left = Math.max(0, Math.ceil(SAME_ALLY_SECONDS - (e.sameAge || 0)));
+    const allyTag = same && state.sameMode === 'ally' && !state.finalClash ? `<span class="tag">ally in ${left}s</span><span class="checkbar"><i style="width:${allyPct}%"></i></span>` : '';
+    const shotTag = e.shotsLeft > 0 ? `<span class="tag one">✦${e.shotsLeft}</span>` : '';
+    html += `<div class="entity enemy ${same?'same':''} ${frozen?'frozen':''} ${state.finalClash?'clash':''}" style="left:${e.x}px;top:${e.y}px">${e.emoji}${allyTag}${shotTag}</div>`;
+  }
+  for(const g of state.gifts){
+    const info = GIFT_TYPES.find(x => x.kind === g.kind);
+    html += `<div class="entity gift" style="left:${g.x}px;top:${g.y}px" title="${info ? info.desc : 'Gift blessing'}">🎁<span class="tag">gift</span></div>`;
+  }
+  for(const a of state.allies){
+    html += `<div class="entity ally" style="left:${a.x}px;top:${a.y}px">${a.emoji}<span class="tag">attached</span><span class="tag one">1 life</span></div>`;
+  }
+  for(const p of state.projectiles){
+    html += `<div class="entity ${p.owner === 'enemy' ? 'enemy-missile' : 'vample'}" style="left:${p.x}px;top:${p.y}px">${p.emoji}</div>`;
+  }
+  entityLayer.innerHTML = html;
+
+  let fx = '';
+  for(const e of state.effects){
+    if(e.kind === 'ring'){
+      fx += `<div class="ring ${e.className||''}" style="left:${e.x}px;top:${e.y}px"></div>`;
+    }else if(e.kind === 'zone'){
+      const size = e.radius*2;
+      fx += `<div class="zone ${e.className||''}" style="left:${e.x}px;top:${e.y}px;width:${size}px;height:${size}px"></div>`;
+    }
+  }
+  effectLayer.innerHTML = fx;
+}
+
+function updateUI(){
+  $('#levelText').textContent = state.level;
+  $('#enemyText').textContent = state.enemies.length;
+  $('#bestText').textContent = state.best;
+  if($('#immuneText')){
+    const tNow = now();
+    $('#immuneText').textContent = tNow < state.immuneUntil ? Math.ceil((state.immuneUntil-tNow)/1000)+'s active' : (tNow < state.immuneCooldownUntil ? Math.ceil((state.immuneCooldownUntil-tNow)/1000)+'s recover' : 'ready');
+  }
+  $('#heartText').textContent = state.health;
+  $('#killText').textContent = state.kills;
+  $('#allyText').textContent = state.allies.length;
+  $('#activeText').textContent = enemyMissileCapacity();
+
+  let timerText = '--';
+  if(state.running && state.stage === 'countdown') timerText = Math.max(0, Math.ceil((state.waveDue - now())/1000)) + 's';
+  else if(state.running && state.stage === 'fight') timerText = 'fight';
+  else if(state.stage === 'choose') timerText = 'choose';
+  else if(state.stage === 'ready') timerText = 'ready';
+  $('#timerText').textContent = timerText;
+
+  const delay = levelDelay(state.level);
+  const count = levelCount(state.level);
+  let hint = 'You are the Deer. Press Start, move with mouse, click/tap or Space to activate Immuno.';
+  if(state.running && state.stage === 'countdown') hint = `Level ${state.level}: gift on map, ${count} enemies renew in ${Math.max(0, Math.ceil((state.waveDue-now())/1000))} sec.`;
+  if(state.running && state.stage === 'fight') hint = state.finalClash ? `FINAL CLASH: ${state.enemies.length} enemies rush you. Immune bumps add life; normal bumps cost life.` : `Level ${state.level}: enemy missiles ✦ are active. Make enemies (${state.enemies.length}) smaller than life (${state.health}) to trigger final clash.`;
+  if(state.stage === 'won') hint = 'Victory. All enemies vanished.';
+  if(state.stage === 'lost') hint = 'Harmony faded. Reset run to try again.';
+  $('#worldHint').textContent = hint;
+
+  renderAbilities();
+}
+
+function renderAbilities(){
+  const box = $('#abilityList');
+  if(!box) return;
+  const t = now();
+  const immuneText = t < state.immuneUntil ? `${Math.ceil((state.immuneUntil-t)/1000)}s active` : (t < state.immuneCooldownUntil ? `${Math.ceil((state.immuneCooldownUntil-t)/1000)}s recover` : 'ready');
+  box.innerHTML = `
+    <span class="chip own ready">🦌 Immuno <b>${immuneText}</b></span>
+    <span class="chip ready">🎁 Gifts carry Deer/Moon/Tree/Water/Star/Fire/Home/Factory powers</span>
+  `;
+}
+
+function loop(t){
+  const dt = Math.min(.033, (t - state.lastTime)/1000 || 0);
+  state.lastTime = t;
+  update(dt);
+  requestAnimationFrame(loop);
+}
+
+function pointerToWorld(e){
+  const r = rect();
+  return {x:e.clientX-r.left, y:e.clientY-r.top};
+}
+function initEvents(){
+  window.addEventListener('resize', () => {
+    if(state.player){
+      const r = rect();
+      state.player.x = clamp(state.player.x, 24, r.width-24);
+      state.player.y = clamp(state.player.y, 24, r.height-24);
+      state.target.x = clamp(state.target.x, 24, r.width-24);
+      state.target.y = clamp(state.target.y, 24, r.height-24);
+    }
+  });
+  world.addEventListener('pointermove', e => {
+    const p = pointerToWorld(e);
+    state.target = p;
+  }, {passive:true});
+  world.addEventListener('pointerdown', e => {
+    const p = pointerToWorld(e);
+    state.target = p;
+    activateImmune();
+  });
+  document.addEventListener('keydown', e => {
+    if(e.code === 'Space'){
+      e.preventDefault();
+      activateImmune();
+    }
+    if(e.key === 'r' || e.key === 'R') resetRun(true);
+  });
+  $('#startBtn').addEventListener('click', startGame);
+  $('#resetBtn').addEventListener('click', () => resetRun(true));
+  $('#modalBtn').addEventListener('click', () => { $('#overlay').classList.remove('show'); startGame(); });
+  $('#mobilePanel').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+}
+
+function boot(){
+  renderSamples();
+  initEvents();
+  chooseSample('deer');
+  state.stage = 'ready';
+  updateUI();
+  showToast('Deer-only mode ready. Press Start.');
+  requestAnimationFrame(loop);
+}
+boot();
+</script>
+</body>
+</html>
