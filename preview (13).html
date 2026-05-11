@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SummerDeer — Smart Agent</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800;900&display=swap');
+  :root{
+    --bg:#06090f;
+    --panel:rgba(10,16,26,.88);
+    --line:rgba(255,255,255,.09);
+    --line2:rgba(255,255,255,.2);
+    --text:#eef0f5;
+    --muted:rgba(238,240,245,.55);
+    --green:#5dffa0;
+    --gold:#ffcc44;
+    --coral:#ff6655;
+    --danger:#ff4444;
+    --blue:#44aaff;
+    --violet:#bb88ff;
+    --side:300px;
+    --shadow:0 32px 80px rgba(0,0,0,.6);
+    --radius:20px;
+    font-family:'Space Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text)}
+  body{background:
+    radial-gradient(ellipse at 80% 10%, rgba(68,170,255,.07) 0%, transparent 40%),
+    radial-gradient(ellipse at 10% 90%, rgba(93,255,160,.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(187,136,255,.04) 0%, transparent 60%),
+    #06090f}
+  button{font-family:inherit;cursor:pointer;color:inherit}
+  #app{height:100vh;display:grid;grid-template-columns:var(--side) 1fr;grid-template-rows:60px 1fr 40px;overflow:hidden}
+
+  /* HEADER */
+  header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--line);background:rgba(4,8,14,.9);backdrop-filter:blur(20px);z-index:30}
+  .brand{display:flex;align-items:center;gap:10px;min-width:0}
+  .mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;border:1px solid rgba(93,255,160,.3);background:rgba(93,255,160,.07);font-size:22px}
+  .brand-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+  .brand-name span{color:var(--green)}
+  .top-pills{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .pill{border:1px solid var(--line);background:rgba(0,0,0,.3);border-radius:6px;padding:5px 9px;font-size:11px;color:var(--muted);white-space:nowrap}
+  .pill b{color:var(--text)}
+  .pill.target{border-color:rgba(255,204,68,.3);color:#ffe080}
+  .pill.agent{border-color:rgba(68,170,255,.35);background:rgba(68,170,255,.08);color:#99d4ff;animation:agentPulse 2s ease-in-out infinite}
+  @keyframes agentPulse{0%,100%{border-color:rgba(68,170,255,.35)}50%{border-color:rgba(68,170,255,.7);box-shadow:0 0 12px rgba(68,170,255,.2)}}
+
+  /* SIDEBAR */
+  aside{grid-row:2/4;padding:14px 12px;border-right:1px solid var(--line);background:rgba(4,8,14,.8);backdrop-filter:blur(20px);overflow-y:auto;z-index:20;display:flex;flex-direction:column;gap:10px}
+  .side-card{border:1px solid var(--line);background:rgba(255,255,255,.025);border-radius:var(--radius);padding:14px}
+  .side-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+  .side-title h2{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.15em;color:var(--muted)}
+  .small{font-size:11px;color:var(--muted);line-height:1.6}
+  .rule{display:flex;gap:8px;align-items:flex-start;margin-top:8px;color:var(--muted);font-size:11px;line-height:1.5}
+  .rule-dot{width:4px;height:4px;border-radius:50%;margin-top:6px;background:var(--gold);flex:0 0 auto}
+  .btn{border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);border-radius:8px;height:36px;padding:0 12px;transition:all .14s ease;display:flex;align-items:center;justify-content:center;gap:7px;font-weight:700;font-size:11px;width:100%;text-transform:uppercase;letter-spacing:.06em}
+  .btn:hover{background:rgba(255,255,255,.09);border-color:var(--line2);transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(135deg,rgba(93,255,160,.2),rgba(93,255,160,.08));border-color:rgba(93,255,160,.4);color:var(--green)}
+  .btn.agent{background:rgba(68,170,255,.1);border-color:rgba(68,170,255,.35);color:#99d4ff}
+  .btn.danger{background:rgba(255,68,68,.08);border-color:rgba(255,68,68,.3);color:#ffaaaa}
+  .btn-grid{display:grid;gap:7px;margin-top:12px}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+  .metric{padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}
+  .metric span{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.1em}
+  .metric b{display:block;font-size:22px;margin-top:5px;color:var(--text)}
+  .target-box{border:1px solid rgba(255,204,68,.25);background:rgba(255,204,68,.05);border-radius:14px;padding:12px;margin-top:10px;text-align:center}
+  .target-big{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;color:var(--gold)}
+  .target-hint{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .agent-info{border:1px solid rgba(68,170,255,.25);background:rgba(68,170,255,.05);border-radius:12px;padding:10px;font-size:10px;color:rgba(153,212,255,.8);line-height:1.6;margin-top:8px}
+
+  /* MAIN */
+  main{position:relative;overflow:hidden;padding:14px}
+  #world{position:relative;width:100%;height:100%;border-radius:var(--radius);border:1px solid var(--line);background:radial-gradient(ellipse at 50% 40%,rgba(255,255,255,.025),transparent 60%),rgba(8,12,20,.95);cursor:none;touch-action:none;overflow:hidden}
+  #world::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);background-size:38px 38px;z-index:0}
+  #worldHint{position:absolute;left:12px;top:10px;z-index:10;padding:6px 11px;border-radius:6px;background:rgba(4,8,14,.7);border:1px solid var(--line);color:var(--muted);font-size:10px;pointer-events:none;max-width:calc(100% - 24px)}
+  #trace{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible}
+  #giftLayer,#enemyLayer,#playerLayer,#fxLayer{position:absolute;inset:0;z-index:4;pointer-events:none}
+  #giftLayer{z-index:3}
+
+  .enemy,.gift,.player{position:absolute;display:grid;place-items:center;transform:translate(-50%,-50%);will-change:left,top}
+  .enemy{border-radius:50%;background:rgba(6,10,18,.7);border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 24px rgba(0,0,0,.4);transition:border-color .1s,filter .1s,opacity .1s;line-height:1}
+  .enemy.current{border-color:rgba(255,204,68,.9);box-shadow:0 0 0 3px rgba(255,204,68,.12),0 12px 32px rgba(0,0,0,.5);filter:brightness(1.3)}
+  .enemy.wrong{animation:wrongPulse .22s ease}
+  @keyframes wrongPulse{50%{transform:translate(-50%,-50%) scale(1.2);border-color:var(--danger);box-shadow:0 0 0 5px rgba(255,68,68,.2)}}
+  .enemy .num{position:absolute;right:-6px;top:-8px;min-width:18px;height:18px;border-radius:6px;display:grid;place-items:center;background:#06090f;border:1px solid rgba(255,204,68,.4);color:#ffe080;font-size:9px;font-weight:700;padding:0 4px}
+  .enemy.current .num{background:var(--gold);color:#111;border-color:var(--gold)}
+  .gift{width:44px;height:44px;border-radius:14px;background:rgba(255,204,68,.1);border:1px solid rgba(255,204,68,.4);box-shadow:0 0 0 3px rgba(255,204,68,.06),0 12px 32px rgba(0,0,0,.4);font-size:26px;animation:giftFloat 2.8s ease-in-out infinite}
+  @keyframes giftFloat{50%{transform:translate(-50%,-60%)}}
+  .player{width:1px;height:1px;z-index:8}
+  .deer-body{display:grid;place-items:center;border-radius:50%;background:rgba(6,10,18,.7);border:2px solid rgba(93,255,160,.5);box-shadow:0 0 0 4px rgba(93,255,160,.08),0 16px 40px rgba(0,0,0,.5);font-size:32px;transition:width .1s,height .1s,font-size .1s,border-color .15s,box-shadow .15s}
+  .deer-body.agent{border-color:rgba(68,170,255,.8);box-shadow:0 0 0 5px rgba(68,170,255,.12),0 0 30px rgba(68,170,255,.15),0 16px 40px rgba(0,0,0,.5)}
+  .life-badge{position:absolute;left:50%;top:0;transform:translate(-50%,-120%);min-width:30px;border-radius:6px;background:#06090f;border:1px solid rgba(93,255,160,.4);color:#afffca;padding:3px 7px;text-align:center;font-size:12px;font-weight:700}
+  .float{position:absolute;z-index:12;pointer-events:none;transform:translate(-50%,-50%);padding:5px 8px;border-radius:6px;background:#06090f;border:1px solid var(--line2);font-size:11px;font-weight:700;animation:floatUp 1s ease forwards;white-space:nowrap}
+  .float.good{color:var(--green);border-color:rgba(93,255,160,.4)}.float.bad{color:#ffaaaa;border-color:rgba(255,68,68,.4)}.float.gold{color:#ffe080;border-color:rgba(255,204,68,.4)}
+  @keyframes floatUp{to{opacity:0;transform:translate(-50%,-160%)}}
+  .shock{position:absolute;z-index:9;border:2px solid rgba(255,204,68,.5);border-radius:50%;transform:translate(-50%,-50%);animation:shock .4s ease-out forwards;pointer-events:none}
+  @keyframes shock{from{width:8px;height:8px;opacity:1}to{width:100px;height:100px;opacity:0}}
+  .agent-path{fill:none;stroke:rgba(68,170,255,.5);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:6 4;filter:drop-shadow(0 0 6px rgba(68,170,255,.25))}
+  .agent-target-ring{fill:none;stroke:rgba(255,204,68,.6);stroke-width:2;animation:targetRingPulse 1s ease-in-out infinite}
+  @keyframes targetRingPulse{0%,100%{r:8;opacity:.6}50%{r:14;opacity:1}}
+  .safe-zone{fill:rgba(68,170,255,.04);stroke:rgba(68,170,255,.15);stroke-width:1.5;stroke-dasharray:4 3}
+  .danger-zone{fill:rgba(255,68,68,.04);stroke:rgba(255,68,68,.12);stroke-width:1;stroke-dasharray:3 3}
+
+  footer{grid-column:2/-1;display:flex;align-items:center;gap:12px;padding:0 16px;border-top:1px solid var(--line);background:rgba(4,8,14,.8);color:var(--muted);font-size:10px;z-index:30}
+  #toast{position:fixed;left:50%;bottom:52px;transform:translateX(-50%) translateY(60px);z-index:99;background:#06090f;border:1px solid var(--line2);color:var(--text);box-shadow:var(--shadow);padding:9px 14px;border-radius:8px;font-size:12px;font-weight:700;opacity:0;transition:all .22s ease;pointer-events:none}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(12px);z-index:120;display:none;align-items:center;justify-content:center;padding:24px}
+  #overlay.show{display:flex}
+  .modal{width:min(480px,100%);border:1px solid var(--line2);background:rgba(8,14,24,.96);border-radius:22px;box-shadow:var(--shadow);padding:28px;text-align:center}
+  .modal-emoji{font-size:52px;margin-bottom:10px}
+  .modal h2{font-family:'Syne',sans-serif;font-size:24px;font-weight:900;margin:0 0 10px;letter-spacing:-.02em}
+  .modal p{margin:0 0 18px;color:var(--muted);line-height:1.65;font-size:12px}
+  .modal-actions{display:grid;gap:8px}
+  .mobile-toggle{display:none!important}
+  @media(max-width:900px){:root{--side:0px}#app{grid-template-columns:1fr;grid-template-rows:60px 1fr 40px}aside{position:fixed;left:10px;top:72px;width:min(300px,calc(100vw - 20px));max-height:calc(100vh - 120px);transform:translateX(-110%);transition:transform .2s ease;border:1px solid var(--line);border-radius:var(--radius);z-index:80}aside.open{transform:translateX(0)}.mobile-toggle{display:inline-flex!important;width:auto}main{padding:8px}footer{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <button class="btn mobile-toggle" id="mobilePanel" type="button" style="width:auto;padding:0 10px">☰</button>
+    <div class="brand">
+      <div class="mark">🦌</div>
+      <div class="brand-name">Summer<span>Deer</span></div>
+    </div>
+    <div class="top-pills">
+      <div class="pill">Lv <b id="topLevel">1</b></div>
+      <div class="pill">❤️ <b id="topLife">5</b></div>
+      <div class="pill">👾 <b id="topEnemies">0</b></div>
+      <div class="pill target">Next <b id="topTarget">#1</b></div>
+      <div class="pill agent" id="agentPill" style="display:none">🤖 AI Running</div>
+    </div>
+  </header>
+
+  <aside id="sidebar">
+    <div class="side-card">
+      <div class="side-title"><h2>Control</h2><span>🎮</span></div>
+      <div class="small">Guide the deer. Touch enemies in exact order (#1 first). Wrong touch = lose 1 life. Correct touch = +1 life & bigger deer.</div>
+      <div class="btn-grid">
+        <button class="btn primary" id="startBtn" type="button">▶ Start Run</button>
+        <button class="btn agent" id="agentDemoBtn" type="button">🤖 AI Agent Mode</button>
+        <button class="btn danger" id="resetBtn" type="button">↺ Reset</button>
+      </div>
+      <div class="target-box">
+        <div class="target-big" id="currentTargetText">#1</div>
+        <div class="target-hint" id="currentTargetHint">Touch this number first. Wrong order costs 1 life — even in AI mode.</div>
+      </div>
+      <div class="agent-info" id="agentInfoBox" style="display:none">
+        🤖 AI uses <b>attraction + repulsion steering</b>: pulls toward the target while being pushed away from every nearby wrong enemy. Multiple enemies close together = stronger repulsion. Same life rules apply!
+      </div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-title"><h2>Level Formula</h2><span>⚡</span></div>
+      <div class="rule"><div class="rule-dot"></div><div><b>Level 1:</b> 3 enemies, 1× speed</div></div>
+      <div class="rule"><div class="rule-dot"></div><div><b>Level 2:</b> 16 enemies, 2× speed</div></div>
+      <div class="rule"><div class="rule-dot"></div><div><b>Level 3:</b> 18 enemies, 3× speed</div></div>
+      <div class="rule"><div class="rule-dot"></div><div><b>Level 4:</b> 32 enemies, 4× speed</div></div>
+      <div class="rule"><div class="rule-dot"></div><div><b>Level 5+:</b> doubles from 32, capped for browser safety</div></div>
+      <div class="rule"><div class="rule-dot" style="background:var(--green)"></div><div><b>Size = ln(life+1)</b> — grows fast early, slower at high life — no more vanishing off-screen!</div></div>
+      <div class="rule"><div class="rule-dot" style="background:var(--danger)"></div><div><b>Multi-hit:</b> touching multiple wrong enemies at once costs life for each one</div></div>
+      <div class="rule"><div class="rule-dot" style="background:var(--blue)"></div><div><b>AI agent</b> uses repulsion steering to dodge all nearby wrong enemies simultaneously</div></div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-title"><h2>Stats</h2><span>📊</span></div>
+      <div class="metrics">
+        <div class="metric"><span>Life</span><b id="lifeText">5</b></div>
+        <div class="metric"><span>Size ln(life)</span><b id="sizeText">1.0</b></div>
+        <div class="metric"><span>Enemies</span><b id="enemyText">0</b></div>
+        <div class="metric"><span>Cleared</span><b id="clearText">0</b></div>
+      </div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-title"><h2>Gifts 🎁</h2></div>
+      <div class="small">A gift spawns each level. Touch it for bonus effects: +life, slow enemies, skip target, or a shield.</div>
+    </div>
+  </aside>
+
+  <main>
+    <div id="world">
+      <div id="worldHint">Move the deer — touch enemies in order. Wrong touch costs life.</div>
+      <svg id="trace"></svg>
+      <div id="giftLayer"></div>
+      <div id="enemyLayer"></div>
+      <div id="playerLayer"></div>
+      <div id="fxLayer"></div>
+    </div>
+  </main>
+
+  <footer>
+    <span>Mouse/touch to guide 🦌</span>
+    <span>·</span>
+    <span>Touch in order — every wrong touch costs life</span>
+    <span>·</span>
+    <span>AI plans safe paths but follows same rules</span>
+  </footer>
+</div>
+
+<div id="overlay">
+  <div class="modal">
+    <div class="modal-emoji" id="modalEmoji">🦌</div>
+    <h2 id="modalTitle">Ready</h2>
+    <p id="modalText">Start your run.</p>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+const $ = q => document.querySelector(q);
+const world = $('#world');
+const enemyLayer = $('#enemyLayer');
+const giftLayer = $('#giftLayer');
+const playerLayer = $('#playerLayer');
+const fxLayer = $('#fxLayer');
+const trace = $('#trace');
+
+const MAX_LEVEL = 30;
+const LEVEL_DELAY = 5000;
+const START_LIFE = 5;
+const SIZE_K = 0.20; // kept for reference — actual scale uses ln(life+1)
+const BASE_ENEMY_SPEED = 34;
+const PLAYER_SPEED = 500;
+const AGENT_SPEED = 820;
+const MAX_VISIBLE_ENEMIES = 900;
+const ENEMY_GAP = 2;
+const COLLISION_COOLDOWN = 300;
+const EMOJIS = ['🌱','🌿','🌲','🦌','💧','🌙','✨','🏠','🏭','🔥','🪨','🌌','🍄','🐦','🦋'];
+
+const GIFTS = [
+  {name:'Life +3',  apply(){state.life+=3; floatText(state.player.x,state.player.y,'+3 life','good');}},
+  {name:'Slow 4s',  apply(){state.slowUntil=now()+4000; floatText(state.player.x,state.player.y,'enemies slowed','gold');}},
+  {name:'Jump!',    apply(){const t=currentEnemy(); if(t){state.player.x=t.x;state.player.y=t.y;floatText(t.x,t.y,'teleport!','gold');}}},
+  {name:'Skip one', apply(){const t=currentEnemy(); if(t) vanishEnemy(t,true,'gift skip');}},
+  {name:'Shield +5',apply(){state.life+=5; floatText(state.player.x,state.player.y,'shield +5','good');}}
+];
+
+const state = {
+  running:false, stage:'ready', level:1, life:START_LIFE, clears:0,
+  enemies:[], gift:null, player:{x:300,y:240}, target:{x:300,y:240},
+  nextOrder:1, waveDue:0, agent:false, slowUntil:0, lastHitAt:0,
+  lastTime:performance.now(), levelClearedAt:0,
+  // Agent state
+  agentWaypoint:null, agentRecalcTimer:0, agentScore:0
+};
+
+function now(){return performance.now();}
+function rect(){return world.getBoundingClientRect();}
+function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function rand(min,max){return min+Math.random()*(max-min);}
+function uid(){return Math.random().toString(36).slice(2,9);}
+function enemyCountForLevel(l){
+  if(l===1)return 3;
+  if(l===2)return 16;
+  if(l===3)return 18;
+  if(l===4)return 32;
+  return Math.min(MAX_VISIBLE_ENEMIES,32*Math.pow(2,l-4));
+}
+function enemySpeedForLevel(l){return BASE_ENEMY_SPEED*l;}
+function enemySizeForCount(c){return clamp(42-Math.max(0,c-16)*0.055,16,42);}
+// Size grows as ln(life+1) — fast at first, slower and slower at high life
+// life=1→0.69 life=5→1.79 life=20→3.04 life=100→4.62 — deer never explodes
+function playerScale(){return Math.max(0.7, Math.log(state.life+1)*0.82);}
+function playerRadius(){return 26*playerScale();}
+function currentEnemy(){return state.enemies.find(e=>e.order===state.nextOrder);}
+function levelFormula(l){
+  if(l===1)return '3';
+  if(l===2)return '16';
+  if(l===3)return '18';
+  if(l===4)return '32';
+  return Math.min(MAX_VISIBLE_ENEMIES,32*Math.pow(2,l-4)).toString();
+}
+
+let toastTimer;
+function showToast(text){
+  const t=$('#toast');t.textContent=text;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function floatText(x,y,text,kind='good'){
+  const el=document.createElement('div');el.className='float '+kind;el.textContent=text;
+  el.style.left=x+'px';el.style.top=y+'px';fxLayer.appendChild(el);
+  setTimeout(()=>el.remove(),1100);
+}
+function shock(x,y){
+  const el=document.createElement('div');el.className='shock';el.style.left=x+'px';el.style.top=y+'px';
+  fxLayer.appendChild(el);setTimeout(()=>el.remove(),450);
+}
+
+function resetGame(){
+  const r=rect();
+  Object.assign(state,{running:false,stage:'ready',level:1,life:START_LIFE,clears:0,enemies:[],gift:null,
+    player:{x:r.width/2,y:r.height/2},target:{x:r.width/2,y:r.height/2},
+    nextOrder:1,waveDue:0,agent:false,slowUntil:0,lastHitAt:0,agentWaypoint:null,agentScore:0});
+  hideModal();render();updateUI();showToast('Reset. Press Start.');
+}
+function startRun(opts={}){
+  const r=rect();
+  Object.assign(state,{running:true,stage:'countdown',level:opts.level||1,life:START_LIFE,clears:0,
+    enemies:[],nextOrder:1,agent:!!opts.agent,
+    player:{x:r.width/2,y:r.height/2},target:{x:r.width/2,y:r.height/2},
+    waveDue:now()+LEVEL_DELAY,gift:null,slowUntil:0,agentWaypoint:null,agentScore:0});
+  hideModal();spawnGift();render();updateUI();
+  $('#agentInfoBox').style.display=state.agent?'block':'none';
+  showToast(state.agent?'AI agent is thinking — same rules apply!':'Level starts in 5 sec.');
+}
+function nextLevel(){
+  if(state.level>=MAX_LEVEL){winGame();return;}
+  state.level+=1;state.stage='countdown';state.enemies=[];state.nextOrder=1;
+  state.waveDue=now()+LEVEL_DELAY;state.gift=null;state.agentWaypoint=null;
+  spawnGift();render();updateUI();
+  showToast(`Level ${state.level}: ${levelFormula(state.level)} enemies · ${state.level}× speed`);
+}
+function spawnGift(){
+  const r=rect();
+  const kind=GIFTS[Math.floor(Math.random()*GIFTS.length)];
+  state.gift={id:uid(),x:rand(70,r.width-70),y:rand(70,r.height-70),kind};
+}
+function spawnWave(){
+  const count=enemyCountForLevel(state.level);
+  const size=enemySizeForCount(count);
+  state.enemies=[];state.nextOrder=1;
+  const r=rect();
+  const margin=Math.max(22,size/2+4);
+  const minDist=size+ENEMY_GAP;
+  const positions=[];
+  for(let i=0;i<count;i++){
+    let placed=false,x=0,y=0;
+    for(let tries=0;tries<90;tries++){
+      x=rand(margin,r.width-margin);y=rand(margin+30,r.height-margin);
+      if(Math.hypot(x-state.player.x,y-state.player.y)<90)continue;
+      if(positions.every(p=>Math.hypot(p.x-x,p.y-y)>=minDist)){placed=true;break;}
+    }
+    if(!placed){
+      const cols=Math.max(1,Math.floor((r.width-margin*2)/minDist));
+      x=margin+(i%cols)*minDist;y=margin+36+Math.floor(i/cols)*minDist%(r.height-margin*2-36);
+    }
+    positions.push({x,y});
+    state.enemies.push({id:uid(),order:i+1,emoji:EMOJIS[Math.floor(Math.random()*EMOJIS.length)],x,y,size,vx:0,vy:0,wrongFlash:0});
+  }
+  resolveEnemyOverlap(3);
+  state.stage='fight';
+  showToast(`Level ${state.level}: ${count} enemies · ${state.level}× speed`);
+}
+function vanishEnemy(e,correct=true,reason='correct'){
+  state.enemies=state.enemies.filter(x=>x.id!==e.id);
+  if(correct){state.life+=1;state.clears+=1;state.nextOrder+=1;floatText(e.x,e.y,'+1 life','good');}
+  else{floatText(e.x,e.y,reason,'gold');}
+  shock(e.x,e.y);
+  state.agentWaypoint=null; // recalculate path after each pickup
+}
+function wrongTouch(e){
+  // Per-enemy cooldown so each enemy can only hit once per window
+  const t=now();
+  if(!e.lastHitAt) e.lastHitAt=0;
+  if(t-e.lastHitAt<COLLISION_COOLDOWN)return false;
+  e.lastHitAt=t;
+  state.life-=1;
+  e.wrongFlash=0.32;
+  floatText(e.x,e.y,'-1','bad');
+  shock(e.x,e.y);
+  if(state.life<=0){loseGame();return true;}
+  return true;
+}
+function collectGift(){
+  if(!state.gift)return;
+  const g=state.gift;state.gift=null;
+  g.kind.apply();showToast('Gift: '+g.kind.name);
+}
+function resolveEnemyOverlap(iter=1){
+  const n=state.enemies.length;if(n<2)return;
+  const r=rect();
+  const cell=Math.max(18,state.enemies[0]?.size||30);
+  for(let pass=0;pass<iter;pass++){
+    const map=new Map();
+    for(const e of state.enemies){
+      const key=Math.floor(e.x/cell)+','+Math.floor(e.y/cell);
+      if(!map.has(key))map.set(key,[]);map.get(key).push(e);
+    }
+    for(const e of state.enemies){
+      const cx=Math.floor(e.x/cell),cy=Math.floor(e.y/cell);
+      for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+        const list=map.get((cx+dx)+','+(cy+dy));if(!list)continue;
+        for(const o of list){
+          if(o===e||o.order<e.order)continue;
+          const minD=(e.size+o.size)/2+ENEMY_GAP;
+          let vx=o.x-e.x,vy=o.y-e.y,d=Math.hypot(vx,vy);
+          if(d>0&&d<minD){const push=(minD-d)/2;vx/=d;vy/=d;e.x-=vx*push;e.y-=vy*push;o.x+=vx*push;o.y+=vy*push;}
+          else if(d===0){e.x-=1;o.x+=1;}
+        }
+      }
+      e.x=clamp(e.x,e.size/2,r.width-e.size/2);
+      e.y=clamp(e.y,e.size/2+26,r.height-e.size/2);
+    }
+  }
+}
+
+// ─── SMART AGENT PATHFINDING ───────────────────────────────────────────────
+// The agent plans a waypoint that routes around wrong enemies.
+// It samples candidate waypoints and picks the one that:
+// 1. Minimizes total path length to target
+// 2. Avoids passing through danger zones (wrong enemy radii)
+// Same collision rules apply — if the agent accidentally hits a wrong enemy, life is lost.
+
+function agentComputeWaypoint(){
+  const target=currentEnemy();
+  if(!target){state.agentWaypoint=null;return;}
+  const p=state.player;
+  const pr=playerRadius()*0.78;
+
+  // Collect wrong enemies (obstacles)
+  const obstacles=state.enemies.filter(e=>e.order!==state.nextOrder);
+
+  // Check if direct path to target is clear
+  if(isPathClear(p,target,obstacles,pr)){
+    state.agentWaypoint=null; // go direct
+    return;
+  }
+
+  const r=rect();
+  const best={cost:Infinity,wp:null};
+
+  // Sample candidate waypoints around each obstacle cluster
+  // and also at strategic positions (corners of bounding boxes, etc.)
+  const candidates=[];
+
+  // Around each wrong enemy, sample avoidance waypoints
+  for(const obs of obstacles){
+    const clearDist=obs.size/2+pr+18;
+    for(let angle=0;angle<Math.PI*2;angle+=Math.PI/6){
+      candidates.push({
+        x:obs.x+Math.cos(angle)*clearDist*1.6,
+        y:obs.y+Math.sin(angle)*clearDist*1.6
+      });
+    }
+  }
+
+  // Add grid waypoints across the field
+  for(let gx=60;gx<r.width-60;gx+=80){
+    for(let gy=60;gy<r.height-60;gy+=80){
+      candidates.push({x:gx,y:gy});
+    }
+  }
+
+  // Score each candidate
+  for(const wp of candidates){
+    // Must be in bounds
+    if(wp.x<20||wp.y<20||wp.x>r.width-20||wp.y>r.height-20)continue;
+    // Cost = dist(player→wp) + dist(wp→target)
+    const cost=dist(p,wp)+dist(wp,target)*0.9;
+    if(cost>=best.cost)continue;
+    // Check both segments are reasonably clear
+    const seg1safe=isPathClear(p,wp,obstacles,pr);
+    const seg2safe=isPathClear(wp,target,obstacles,pr);
+    if(seg1safe&&seg2safe){
+      best.cost=cost;best.wp=wp;
+    }
+  }
+
+  // If a waypoint helps, use it; else go direct and accept risk
+  if(best.wp&&best.cost<dist(p,target)*1.15+80){
+    state.agentWaypoint=best.wp;
+  } else {
+    state.agentWaypoint=null;
+  }
+}
+
+function isPathClear(from,to,obstacles,pr){
+  // Sample along the path segment and check distance to each obstacle
+  const steps=12;
+  for(let i=1;i<=steps;i++){
+    const t=i/steps;
+    const px=from.x+(to.x-from.x)*t;
+    const py=from.y+(to.y-from.y)*t;
+    for(const obs of obstacles){
+      const minD=obs.size/2+pr+4;
+      if(Math.hypot(px-obs.x,py-obs.y)<minD)return false;
+    }
+  }
+  return true;
+}
+
+function agentMove(dt){
+  const target=currentEnemy();
+  if(!target)return;
+
+  // Recalculate waypoint periodically
+  state.agentRecalcTimer=(state.agentRecalcTimer||0)-dt;
+  if(state.agentRecalcTimer<=0){
+    agentComputeWaypoint();
+    state.agentRecalcTimer=0.10;
+  }
+
+  const pr=playerRadius()*0.78;
+  const obstacles=state.enemies.filter(e=>e.order!==state.nextOrder);
+
+  // Base destination: waypoint or target
+  let dest;
+  if(state.agentWaypoint){
+    if(dist(state.player,state.agentWaypoint)<20){state.agentWaypoint=null;dest=target;}
+    else dest=state.agentWaypoint;
+  } else {
+    dest=target;
+  }
+
+  // Gift detour — only if safe path to gift exists
+  if(state.gift){
+    const gd=dist(state.player,state.gift);
+    const td=dist(state.player,target);
+    if(gd<90&&gd<td*0.55&&isPathClear(state.player,state.gift,obstacles,pr)){
+      dest=state.gift;
+    }
+  }
+
+  // Compute attraction vector toward dest
+  let ax=dest.x-state.player.x, ay=dest.y-state.player.y;
+  const ad=Math.hypot(ax,ay)||1; ax/=ad; ay/=ad;
+
+  // Compute repulsion from ALL nearby wrong enemies
+  // Repulsion strength = 1/d^2, falls off quickly with distance
+  const REPEL_RADIUS = pr * 6 + 40; // how far the agent starts steering away
+  let rx=0, ry=0;
+  for(const obs of obstacles){
+    const d=dist(state.player,obs);
+    const safeD=obs.size/2+pr+12;
+    if(d<REPEL_RADIUS){
+      const strength=Math.pow(Math.max(0,(REPEL_RADIUS-d)/REPEL_RADIUS),2)*3.5;
+      const dx=state.player.x-obs.x, dy=state.player.y-obs.y;
+      const dl=Math.hypot(dx,dy)||1;
+      rx+=dx/dl*strength; ry+=dy/dl*strength;
+    }
+  }
+
+  // Blend: attraction + repulsion, repulsion weighted more when close to danger
+  const repulseLen=Math.hypot(rx,ry);
+  const blendWeight=Math.min(1, repulseLen/2.5);
+  const fx=ax*(1-blendWeight*0.7)+rx*0.7;
+  const fy=ay*(1-blendWeight*0.7)+ry*0.7;
+  const fl=Math.hypot(fx,fy)||1;
+
+  // Move in the blended direction
+  const r=rect();
+  state.player.x=clamp(state.player.x+fx/fl*AGENT_SPEED*dt, playerRadius(), r.width-playerRadius());
+  state.player.y=clamp(state.player.y+fy/fl*AGENT_SPEED*dt, playerRadius()+20, r.height-playerRadius());
+  // Override state.target so the normal movement code doesn't fight us
+  state.target={x:state.player.x,y:state.player.y};
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+
+function update(dt){
+  if(!state.running)return;
+  const r=rect();
+
+  // Player movement
+  let agentHandled=false;
+  if(state.agent&&state.stage==='fight'){
+    agentMove(dt);
+    agentHandled=true;
+  }
+  if(!agentHandled){
+    const dx=state.target.x-state.player.x, dy=state.target.y-state.player.y;
+    const d=Math.hypot(dx,dy);
+    if(d>1){const step=Math.min(d,PLAYER_SPEED*dt);state.player.x+=dx/d*step;state.player.y+=dy/d*step;}
+    state.player.x=clamp(state.player.x,playerRadius(),r.width-playerRadius());
+    state.player.y=clamp(state.player.y,playerRadius()+20,r.height-playerRadius());
+  }
+
+  if(state.stage==='countdown'&&now()>=state.waveDue)spawnWave();
+
+  if(state.stage==='fight'){
+    const speedBase=enemySpeedForLevel(state.level)*(now()<state.slowUntil?0.3:1);
+    const cur=currentEnemy();
+    for(const e of state.enemies){
+      e.wrongFlash=Math.max(0,e.wrongFlash-dt);
+      const chaseFactor=e===cur?1.0:0.46;
+      const vx=state.player.x-e.x,vy=state.player.y-e.y,len=Math.hypot(vx,vy)||1;
+      e.x+=(vx/len)*speedBase*chaseFactor*dt;
+      e.y+=(vy/len)*speedBase*chaseFactor*dt;
+    }
+    resolveEnemyOverlap(state.enemies.length>350?1:2);
+    checkCollisions();
+    if(state.enemies.length===0){
+      state.stage='levelClear';state.levelClearedAt=now();
+      showToast(`Level ${state.level} cleared! Next in 5 sec.`);
+    }
+  }
+  if(state.stage==='levelClear'&&now()-state.levelClearedAt>LEVEL_DELAY)nextLevel();
+  render();updateUI();
+}
+
+function checkCollisions(){
+  const pr=playerRadius()*0.78;
+  if(state.gift&&dist(state.player,state.gift)<pr+26)collectGift();
+  const cur=currentEnemy();
+  // Check correct target first — wins over wrong collisions
+  if(cur&&dist(state.player,cur)<pr+cur.size/2){
+    vanishEnemy(cur,true,'correct');return;
+  }
+  // Check ALL wrong enemies simultaneously — each overlapping one costs a life
+  let dead=false;
+  for(const e of state.enemies){
+    if(e===cur)continue;
+    if(dist(state.player,e)<pr+e.size/2){
+      const died=wrongTouch(e);
+      if(died&&state.life<=0){dead=true;break;}
+    }
+  }
+}
+
+function loseGame(){
+  state.running=false;state.stage='lost';
+  showModal('💀','Game Over',
+    `Life reached 0 at Level ${state.level}. Correct touches: ${state.clears}. The AI agent follows the same rules!`,
+    [['Try Again',()=>startRun()],
+     ['AI Agent Mode',()=>startRun({agent:true,level:Math.max(1,state.level)})]]);
+}
+function winGame(){
+  state.running=false;state.stage='won';
+  showModal('🏆','You Won!',
+    `Survived all ${MAX_LEVEL} levels! Life: ${state.life}. Correct touches: ${state.clears}.`,
+    [['Play Again',()=>startRun()],['AI Replay',()=>startRun({agent:true,level:1})]]);
+}
+function showModal(emoji,title,text,actions){
+  $('#modalEmoji').textContent=emoji;$('#modalTitle').textContent=title;$('#modalText').textContent=text;
+  const box=$('#modalActions');box.innerHTML='';
+  actions.forEach(([label,fn],i)=>{
+    const b=document.createElement('button');
+    b.className='btn '+(i===0?'primary':'agent');b.type='button';b.textContent=label;
+    b.onclick=()=>{hideModal();fn();};box.appendChild(b);
+  });
+  $('#overlay').classList.add('show');
+}
+function hideModal(){$('#overlay').classList.remove('show');}
+function pointerToWorld(e){const r=rect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+
+function initEvents(){
+  world.addEventListener('pointermove',e=>{if(!state.agent){state.target=pointerToWorld(e);}},{passive:true});
+  world.addEventListener('pointerdown',e=>{if(!state.agent){state.target=pointerToWorld(e);}});
+  window.addEventListener('resize',()=>{
+    const r=rect();
+    state.player.x=clamp(state.player.x,40,r.width-40);
+    state.player.y=clamp(state.player.y,60,r.height-40);
+    state.target={...state.player};
+  });
+  $('#startBtn').addEventListener('click',()=>startRun());
+  $('#resetBtn').addEventListener('click',()=>resetGame());
+  $('#agentDemoBtn').addEventListener('click',()=>startRun({agent:true,level:1}));
+  $('#mobilePanel').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+  document.addEventListener('keydown',e=>{
+    if(e.key==='r'||e.key==='R')resetGame();
+    if(e.key==='a'||e.key==='A')startRun({agent:true,level:1});
+    if(e.key==='Enter'&&state.stage==='ready')startRun();
+  });
+}
+
+// ─── RENDER ────────────────────────────────────────────────────────────────
+function renderPlayer(){
+  let el=$('#player');
+  if(!el){
+    el=document.createElement('div');el.id='player';el.className='player';
+    el.innerHTML='<div class="life-badge" id="lifeBadge">5</div><div class="deer-body" id="deerBody">🦌</div>';
+    playerLayer.appendChild(el);
+  }
+  const scale=playerScale();
+  const size=52*scale;
+  el.style.left=state.player.x+'px';el.style.top=state.player.y+'px';
+  $('#lifeBadge').textContent=state.life;
+  const body=$('#deerBody');
+  body.style.width=size+'px';body.style.height=size+'px';body.style.fontSize=clamp(32*scale,20,80)+'px';
+  body.classList.toggle('agent',state.agent);
+}
+function renderEnemies(){
+  const existing=new Map([...enemyLayer.children].map(el=>[el.dataset.id,el]));
+  const needed=new Set();
+  for(const e of state.enemies){
+    needed.add(e.id);
+    let el=existing.get(e.id);
+    if(!el){
+      el=document.createElement('div');el.className='enemy';el.dataset.id=e.id;
+      el.innerHTML='<span class="emoji"></span><span class="num"></span>';
+      enemyLayer.appendChild(el);
+    }
+    el.style.left=e.x+'px';el.style.top=e.y+'px';
+    el.style.width=e.size+'px';el.style.height=e.size+'px';
+    el.style.fontSize=Math.max(12,e.size*0.55)+'px';
+    el.querySelector('.emoji').textContent=e.emoji;
+    el.querySelector('.num').textContent=e.order;
+    el.classList.toggle('current',e.order===state.nextOrder);
+    el.classList.toggle('wrong',e.wrongFlash>0);
+    el.style.opacity=e.order<state.nextOrder?'.15':'1';
+  }
+  for(const [id,el] of existing){if(!needed.has(id))el.remove();}
+}
+function renderGift(){
+  giftLayer.innerHTML='';
+  if(!state.gift)return;
+  const el=document.createElement('div');el.className='gift';el.textContent='🎁';
+  el.style.left=state.gift.x+'px';el.style.top=state.gift.y+'px';
+  giftLayer.appendChild(el);
+}
+function renderTrace(){
+  const r=rect();
+  trace.setAttribute('viewBox',`0 0 ${r.width} ${r.height}`);
+  trace.innerHTML='';
+  if(!state.agent||state.stage!=='fight')return;
+
+  const target=currentEnemy();
+  if(!target)return;
+
+  const p=state.player;
+  const wp=state.agentWaypoint;
+
+  // Draw safe zones for nearby wrong enemies (danger visualization)
+  const pr=playerRadius()*0.78;
+  const wrongEnemies=state.enemies.filter(e=>e.order!==state.nextOrder);
+  for(const obs of wrongEnemies){
+    if(dist(p,obs)<obs.size*4){
+      const danger=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      danger.setAttribute('cx',obs.x);danger.setAttribute('cy',obs.y);
+      danger.setAttribute('r',obs.size/2+pr+6);
+      danger.setAttribute('class','danger-zone');
+      trace.appendChild(danger);
+    }
+  }
+
+  // Draw path
+  const pathD=wp
+    ?`M ${p.x.toFixed(1)} ${p.y.toFixed(1)} L ${wp.x.toFixed(1)} ${wp.y.toFixed(1)} L ${target.x.toFixed(1)} ${target.y.toFixed(1)}`
+    :`M ${p.x.toFixed(1)} ${p.y.toFixed(1)} L ${target.x.toFixed(1)} ${target.y.toFixed(1)}`;
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',pathD);path.setAttribute('class','agent-path');
+  trace.appendChild(path);
+
+  // Waypoint marker
+  if(wp){
+    const wpc=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    wpc.setAttribute('cx',wp.x);wpc.setAttribute('cy',wp.y);wpc.setAttribute('r','5');
+    wpc.setAttribute('fill','rgba(68,170,255,.7)');wpc.setAttribute('stroke','#06090f');wpc.setAttribute('stroke-width','1.5');
+    trace.appendChild(wpc);
+  }
+
+  // Target ring
+  const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  ring.setAttribute('cx',target.x);ring.setAttribute('cy',target.y);ring.setAttribute('r','10');
+  ring.setAttribute('class','agent-target-ring');
+  trace.appendChild(ring);
+}
+function render(){renderPlayer();renderEnemies();renderGift();renderTrace();}
+
+function updateUI(){
+  $('#topLevel').textContent=state.level;
+  $('#topLife').textContent=state.life;
+  $('#topEnemies').textContent=state.enemies.length||(state.stage==='countdown'?enemyCountForLevel(state.level):0);
+  $('#topTarget').textContent=state.enemies.length?'#'+state.nextOrder:'—';
+  $('#lifeText').textContent=state.life;
+  $('#sizeText').textContent=playerScale().toFixed(1);
+  $('#enemyText').textContent=state.enemies.length;
+  $('#clearText').textContent=state.clears;
+  $('#currentTargetText').textContent=state.enemies.length?'#'+state.nextOrder:(state.stage==='countdown'?'wait':'#1');
+  $('#agentPill').style.display=state.agent?'block':'none';
+  $('#agentInfoBox').style.display=state.agent?'block':'none';
+
+  let hint='Move the deer. Touch the correct ordered enemy only — wrong touch costs life.';
+  if(state.stage==='countdown')hint=`Level ${state.level}: ${levelFormula(state.level)} enemies · ${state.level}× speed · starts in ${Math.max(0,Math.ceil((state.waveDue-now())/1000))}s`;
+  if(state.stage==='fight')hint=`Level ${state.level} · touch #${state.nextOrder} next · ${state.enemies.length} enemies left${state.agent?' · AI planning safe route':''}`;
+  if(state.stage==='levelClear')hint=`Level ${state.level} cleared! Next in ${Math.max(0,Math.ceil((LEVEL_DELAY-(now()-state.levelClearedAt))/1000))}s`;
+  $('#worldHint').textContent=hint;
+}
+
+function loop(t){
+  const dt=Math.min(0.033,(t-state.lastTime)/1000||0);
+  state.lastTime=t;update(dt);requestAnimationFrame(loop);
+}
+function boot(){
+  const r=rect();
+  state.player={x:r.width/2,y:r.height/2};state.target={...state.player};
+  initEvents();render();updateUI();
+  showToast('Ready — press Start or Enter');
+  requestAnimationFrame(loop);
+}
+boot();
+</script>
+</body>
+</html>
